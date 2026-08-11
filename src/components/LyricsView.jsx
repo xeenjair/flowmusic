@@ -506,10 +506,7 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, getCurre
             </div>
 
             <div className="lyrics-volume-block">
-              <div className="lyrics-volume-header">
-                <span className="lyrics-volume-label">Громкость</span>
-                <span className="lyrics-volume-percent">{Math.round((volume ?? 0.7) * 100)}%</span>
-              </div>
+              <span className="lyrics-volume-label">Громкость</span>
               <input
                 type="range"
                 min="0"
@@ -519,6 +516,7 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, getCurre
                 onChange={(e) => onVolumeChange?.(parseFloat(e.target.value))}
                 className="lyrics-volume-slider"
               />
+              <span className="lyrics-volume-percent">{Math.round((volume ?? 0.7) * 100)}%</span>
             </div>
           </div>
         </div>

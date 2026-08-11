@@ -153,13 +153,6 @@
   gap: 8px;
 }
 
-.lyrics-volume-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
 .lyrics-volume-label {
   color: #9f9f9f;
   font-size: 12px;
@@ -171,6 +164,14 @@
   color: #ffffff;
   font-size: 12px;
   font-weight: 600;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.lyrics-volume-block:hover .lyrics-volume-percent,
+.lyrics-volume-block:focus-within .lyrics-volume-percent {
+  opacity: 1;
 }
 
 .lyrics-volume-slider {
