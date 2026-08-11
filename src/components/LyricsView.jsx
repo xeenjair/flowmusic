@@ -14,6 +14,7 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
   const [customText, setCustomText] = useState('');
   const [hasCustomLyrics, setHasCustomLyrics] = useState(false);
   const lyricsRef = useRef(null);
+  const textPanelRef = useRef(null);
   const parsedLyricsRef = useRef([]);
   const lastScrollTimeRef = useRef(0);
 
@@ -45,10 +46,19 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
     }
     
     const now = Date.now();
-    if (idx !== -1 && lyricsRef.current && (now - lastScrollTimeRef.current > 300)) {
+    if (idx !== -1 && lyricsRef.current && textPanelRef.current && (now - lastScrollTimeRef.current > 300)) {
+      const panel = textPanelRef.current;
       const lineElement = lyricsRef.current.children[idx];
       if (lineElement) {
-        lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Плавный скролл ТОЛЬКО панели текста (не всех контейнеров)
+        const panelRect = panel.getBoundingClientRect();
+        const lineRect = lineElement.getBoundingClientRect();
+        const lineCenterInPanel = lineRect.top - panelRect.top + lineRect.height / 2;
+        const centerOffset = lineCenterInPanel - panel.clientHeight / 2;
+        // Не скроллим, если строка и так почти по центру (защита от дёрганий)
+        if (Math.abs(centerOffset) > 40) {
+          panel.scrollTo({ top: panel.scrollTop + centerOffset, behavior: 'smooth' });
+        }
         lastScrollTimeRef.current = now;
       }
     }
@@ -333,7 +343,7 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
             </div>
           </div>
 
-          <div className="lyrics-text-panel" style={{ '--cover-bg': track.cover ? `url(${track.cover})` : 'none' }}>
+          <div className="lyrics-text-panel" ref={textPanelRef} style={{ '--cover-bg': track.cover ? `url(${track.cover})` : 'none' }}>
             <div className="lyrics-actions">
               {source && <span className="lyrics-source-badge">{getSourceText()}</span>}
               <button className="lyrics-edit-btn" onClick={startEditing}>
@@ -350,12 +360,11 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
                     key={index}
                     className={`lyrics-line ${index === activeLineIndex ? 'active' : ''} ${index < activeLineIndex ? 'passed' : ''}`}
                     style={{
-                      color: index === activeLineIndex ? highlightColor : secondaryColor,
-                      opacity: index < activeLineIndex ? 0.5 : 1
+                      color: index === activeLineIndex ? highlightColor : secondaryColor
                     }}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.01, duration: 0.2 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
                   >
                     {line.text}
                   </motion.div>
@@ -368,7 +377,7 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
                     style={{ color: textColor }}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: index * 0.02, duration: 0.2 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
                   >
                     {line}
                   </motion.div>

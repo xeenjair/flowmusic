@@ -1760,6 +1760,18 @@ body {
   background-size: cover;
   background-position: center;
   z-index: -1;
+  animation: fullscreenCoverFade 0.4s ease-out;
+}
+
+@keyframes fullscreenCoverFade {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .fullscreen-cover-overlay {

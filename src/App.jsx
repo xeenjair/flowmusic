@@ -1894,24 +1894,35 @@ function App() {
             </div>
           )}
           
-          {activeTab === 'lyrics' && (
-            <LyricsView
-              track={currentTrack}
-              currentTime={currentTime}
-              duration={duration}
-              volume={volume}
-              onVolumeChange={setVolume}
-              isPlaying={isPlaying}
-              onPlayPause={togglePlayPause}
-              onNext={playNext}
-              onPrevious={playPrevious}
-              onSeek={handleLyricsSeek}
-              isLoading={isLoadingTrack}
-              onClose={() => setActiveTab('home')}
-              settings={settings}
-              t={t}
-            />
-          )}
+          <AnimatePresence>
+            {activeTab === 'lyrics' && (
+              <motion.div
+                key="lyrics-view"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 14 }}
+                transition={{ duration: 0.28, ease: 'easeOut' }}
+                style={{ position: 'fixed', inset: 0, zIndex: 100 }}
+              >
+                <LyricsView
+                  track={currentTrack}
+                  currentTime={currentTime}
+                  duration={duration}
+                  volume={volume}
+                  onVolumeChange={setVolume}
+                  isPlaying={isPlaying}
+                  onPlayPause={togglePlayPause}
+                  onNext={playNext}
+                  onPrevious={playPrevious}
+                  onSeek={handleLyricsSeek}
+                  isLoading={isLoadingTrack}
+                  onClose={() => setActiveTab('home')}
+                  settings={settings}
+                  t={t}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           {activeTab === 'home' && !selectedPlaylist && !loading && !error && (
             <div className="featured-playlists">
