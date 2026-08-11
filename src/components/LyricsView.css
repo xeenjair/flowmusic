@@ -153,11 +153,24 @@
   gap: 8px;
 }
 
+.lyrics-volume-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .lyrics-volume-label {
   color: #9f9f9f;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.lyrics-volume-percent {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .lyrics-volume-slider {
