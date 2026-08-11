@@ -25,11 +25,12 @@ const LyricLine = React.memo(function LyricLine({ text, isActive, isPassed, high
   prev.secondaryColor === next.secondaryColor
 );
 
-const LyricsView = React.memo(function LyricsView({ track, currentTime, duration, volume, onVolumeChange, isPlaying, onPlayPause, onNext, onPrevious, onSeek, isLoading, onClose, settings, t }) {
+const LyricsView = React.memo(function LyricsView({ track, currentTime, getCurrentTime, duration, volume, onVolumeChange, isPlaying, onPlayPause, onNext, onPrevious, onSeek, isLoading, onClose, settings, t }) {
   const [lyrics, setLyrics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeLineIndex, setActiveLineIndex] = useState(-1);
+  const [liveTime, setLiveTime] = useState(0);
   const [source, setSource] = useState(null);
   const [showControls, setShowControls] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -56,11 +57,28 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
     }
   }, [track]);
 
+  // 60fps-цикл: время читается напрямую из audio каждый кадр (~16мс),
+  // отсекается только дубликат значения (обычно при паузе/загрузке)
+  useEffect(() => {
+    let rafId;
+    let lastTime = -1;
+    const tick = () => {
+      const t = getCurrentTime ? getCurrentTime() : (currentTime || 0);
+      if (Math.abs(t - lastTime) >= 0.01) {
+        lastTime = t;
+        setLiveTime(t);
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [getCurrentTime, currentTime]);
+
   useEffect(() => {
     if (parsedLyricsRef.current.length === 0) return;
     
     const idx = parsedLyricsRef.current.findIndex(line => 
-      currentTime >= line.startTime && currentTime <= line.endTime
+      liveTime >= line.startTime && liveTime <= line.endTime
     );
     
     if (idx !== -1 && idx !== activeLineIndex) {
@@ -84,7 +102,7 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
         lastScrollTimeRef.current = now;
       }
     }
-  }, [currentTime, activeLineIndex]);
+  }, [liveTime, activeLineIndex]);
 
   const checkCustomLyrics = async () => {
     if (!track) return;
@@ -331,7 +349,7 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
 
                <div className="lyrics-cover-bottom-controls">
                   <div className="lyrics-progress-container">
-                    <span className="lyrics-current-time">{formatTime(currentTime)}</span>
+                    <span className="lyrics-current-time">{formatTime(liveTime)}</span>
                     <div
                       className="lyrics-progress-bar"
                       onClick={(e) => {
@@ -343,7 +361,7 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
                     >
                       <div
                         className="lyrics-progress-filled"
-                        style={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' }}
+                        style={{ width: duration > 0 ? `${(liveTime / duration) * 100}%` : '0%' }}
                       />
                     </div>
                     <span className="lyrics-duration-time">{formatTime(duration)}</span>
@@ -467,7 +485,7 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
 
           <div className="lyrics-cover-bottom-controls centered-controls">
             <div className="lyrics-progress-container">
-              <span className="lyrics-current-time">{formatTime(currentTime)}</span>
+              <span className="lyrics-current-time">{formatTime(liveTime)}</span>
               <div
                 className="lyrics-progress-bar"
                 onClick={(e) => {
@@ -481,7 +499,7 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
               >
                 <div
                   className="lyrics-progress-filled"
-                  style={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' }}
+                  style={{ width: duration > 0 ? `${(liveTime / duration) * 100}%` : '0%' }}
                 ></div>
               </div>
               <span className="lyrics-duration-time">{formatTime(duration || track.durationMs / 1000)}</span>

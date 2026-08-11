@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Titlebar from './components/Titlebar';
 import LyricsView from './components/LyricsView';
@@ -576,27 +576,11 @@ function App() {
     return () => window.removeEventListener('lyrics:seek', handleLyricsSeek);
   }, []);
 
-  // Высокочастотный таймер времени для режима Lyrics (30fps вместо ~4fps timeupdate)
-  // — подсветка строк переключается точно в тайминг, без задержки
-  useEffect(() => {
-    if (activeTab !== 'lyrics') return;
-    let rafId;
-    let lastTime = -1;
-    const tick = () => {
-      const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
-      if (audio && isPlaying && !audio.paused) {
-        const t = audio.currentTime;
-        // Обновляем только при заметном изменении (>30мс), чтобы не спамить рендеры
-        if (Math.abs(t - lastTime) >= 0.03) {
-          lastTime = t;
-          setCurrentTime(t);
-        }
-      }
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [activeTab, isPlaying]);
+  // Стабильный геттер текущего времени аудио для LyricsView (60fps-цикл внутри компонента)
+  const getCurrentTime = useCallback(() => {
+    const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
+    return audio ? audio.currentTime : 0;
+  }, []);
 
   useEffect(() => {
     document.addEventListener('click', closeContextMenu);
@@ -1929,6 +1913,7 @@ function App() {
                 <LyricsView
                   track={currentTrack}
                   currentTime={currentTime}
+                  getCurrentTime={getCurrentTime}
                   duration={duration}
                   volume={volume}
                   onVolumeChange={setVolume}
