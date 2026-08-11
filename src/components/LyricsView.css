@@ -1,0 +1,652 @@
+.lyrics-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.lyrics-close-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  padding: 8px 18px;
+  border-radius: 30px;
+  cursor: pointer;
+  z-index: 200;
+  transition: all 0.2s;
+}
+
+.lyrics-close-btn:hover {
+  background: rgba(50, 50, 50, 0.9);
+}
+
+.lyrics-split-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Левая панель — обложка */
+.lyrics-cover-panel {
+  width: 350px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.lyrics-cover-wrapper {
+  position: relative;
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+
+.fixed-cover-left {
+  width: 260px;
+  height: 260px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid #3a3a3a;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.lyrics-cover-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  background: transparent;
+  border-radius: 12px;
+}
+
+.centered-cover-wrapper .lyrics-cover-controls {
+  bottom: 0;
+}
+
+.cover-control-btn {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: #000;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.cover-control-btn:hover {
+  opacity: 0.8;
+}
+
+.cover-control-btn.play {
+  width: 55px;
+  height: 55px;
+  font-size: 24px;
+}
+
+.cover-info-left {
+  text-align: center;
+  width: 100%;
+}
+
+.lyrics-cover-bottom-controls {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: transparent;
+  border: none;
+}
+
+.lyrics-cover-bottom-controls.centered-controls {
+  width: min(320px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.lyrics-time-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  color: #d6d6d6;
+  font-size: 13px;
+}
+
+.lyrics-volume-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lyrics-volume-label {
+  color: #9f9f9f;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.lyrics-volume-slider {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffffff, #7f7f7f);
+  outline: none;
+  cursor: pointer;
+}
+
+.lyrics-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.lyrics-volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.lyrics-progress-block {
+  margin-bottom: 12px;
+}
+
+.lyrics-progress-slider {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffffff, #7f7f7f);
+  outline: none;
+  cursor: pointer;
+}
+
+.lyrics-progress-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.lyrics-progress-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.cover-info-left h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #fff;
+}
+
+.cover-info-left p {
+  font-size: 15px;
+  color: #b3b3b3;
+}
+
+.empty-cover-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 260px;
+  height: 260px;
+  background: transparent;
+  border-radius: 12px;
+  border: none;
+}
+
+.cover-icon {
+  font-size: 60px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.cover-artist {
+  color: #b3b3b3;
+  font-size: 14px;
+}
+
+/* Правая панель — текст СМЕЩЁН ВПРАВО (отступ слева) */
+.lyrics-text-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 60px 60px 80px 80px;
+  background: transparent;
+  height: 100vh;
+  position: relative;
+}
+
+.lyrics-text-panel::before {
+  display: none;
+}
+
+.lyrics-text-panel.empty {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 80px;
+  color: #757575;
+  font-size: 16px;
+}
+
+.lyrics-text-panel.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-left: 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #282828;
+  border-top-color: #b3b3b3;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.lyrics-source {
+  font-size: 12px;
+  color: #535353;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+}
+
+.lyrics-line {
+  font-size: 28px;
+  font-weight: 500;
+  color: #6a6a6a;
+  transition: all 0.3s ease;
+  padding: 12px 0;
+  line-height: 1.4;
+}
+
+.lyrics-line.active {
+  color: #ffffff;
+  font-size: 34px;
+  font-weight: 700;
+}
+
+.lyrics-line.passed {
+  color: #4a4a4a;
+  opacity: 0.6;
+}
+
+.lyrics-line-plain {
+  color: #e0e0e0;
+  font-size: 24px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* Скроллбар */
+.lyrics-text-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.lyrics-text-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lyrics-text-panel::-webkit-scrollbar-thumb {
+  background: #535353;
+  border-radius: 2px;
+}
+/* Режим без текста — всё по центру */
+.lyrics-centered-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 40px;
+  position: relative;
+}
+
+.centered-cover-large {
+  width: 300px;
+  height: 300px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #2a2a2a;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.empty-cover-placeholder.centered {
+  width: 300px;
+  height: 300px;
+}
+
+.cover-info-centered {
+  text-align: center;
+  margin-bottom: 16px;
+  background: transparent;
+  padding: 20px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.cover-info-centered h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.cover-info-centered p {
+  font-size: 16px;
+  color: #888;
+}
+
+.no-lyrics-text {
+  color: #666;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+/* Кнопки управления текстом */
+.lyrics-actions {
+  position: absolute;
+  top: 20px;
+  right: 60px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+}
+
+.lyrics-actions.centered-actions {
+  position: static;
+  justify-content: center;
+  margin: 16px 0;
+}
+
+.lyrics-actions.above-cover {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  margin: 0;
+  z-index: 10;
+}
+
+.lyrics-source-badge {
+  font-size: 10px;
+  color: #888;
+  background: #2a2a2a;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.lyrics-edit-btn,
+.lyrics-delete-btn {
+  background: transparent;
+  border: 1px solid #444;
+  color: #ccc;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lyrics-edit-btn:hover {
+  background: #333;
+  border-color: #666;
+}
+
+.lyrics-delete-btn:hover {
+  background: #ff4d4d20;
+  border-color: #ff4d4d;
+  color: #ff4d4d;
+}
+
+.add-lyrics-btn {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: transparent;
+  border: 1px solid #666;
+  color: #ccc;
+  font-size: 14px;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-lyrics-btn:hover {
+  background: #333;
+  border-color: #888;
+  color: #fff;
+}
+
+/* Редактор текста */
+.lyrics-editor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 40px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.lyrics-editor-container h3 {
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.editor-track-info {
+  color: #888;
+  margin-bottom: 24px;
+}
+
+.lyrics-textarea {
+  flex: 1;
+  min-height: 400px;
+  padding: 20px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  line-height: 1.6;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.lyrics-textarea:focus {
+  outline: none;
+  border-color: #888;
+}
+
+.lyrics-textarea::placeholder {
+  color: #666;
+}
+
+.editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+.editor-btn {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.editor-btn.save {
+  background: #4caf50;
+  color: #fff;
+}
+
+.editor-btn.save:hover {
+  background: #45a049;
+}
+
+.editor-btn.cancel {
+  background: transparent;
+  border: 1px solid #666;
+  color: #ccc;
+}
+
+.editor-btn.cancel:hover {
+  background: #333;
+}
+/* Файл: src/App.css */
+
+/* Применяем пиксельный шрифт ко всему плееру */
+.player-bar {
+  font-family: 'VT323', monospace !important;
+  font-size: 18px; /* Отрегулируйте размер по вкусу */
+}
+
+/* Убираем сглаживание для достижения "пиксельного" эффекта */
+.player-bar * {
+  font-smooth: never !important;
+  -webkit-font-smoothing: none !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Дополнительно: можно немного увеличить размер шрифта в конкретных элементах */
+.player-bar .player-track-title {
+  font-size: 20px;
+}
+
+.player-bar .player-track-artist {
+  font-size: 16px;
+}
+
+.player-bar .player-time {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+}
+
+.editor-hint {
+  color: #888;
+  font-size: 13px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #2a2a2a;
+  border-radius: 6px;
+}
+
+.editor-hint code {
+  background: #1a1a1a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #ffdb4d;
+}
+
+.lyrics-progress-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.centered-controls .lyrics-progress-container {
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0;
+}
+
+/* Затемнение обложки в режиме LYRICS */
+.lyrics-cover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.lyrics-cover-overlay.centered-overlay {
+  border-radius: 8px;
+}
+
+/* В centred-режиме controls не должны перекрывать затемнение */
+.centered-cover-wrapper .lyrics-cover-overlay {
+  bottom: 0;
+}
+
+.lyrics-current-time,
+.lyrics-duration-time {
+  font-size: 14px;
+  color: #b3b3b3;
+  min-width: 40px;
+  text-align: center;
+}
+
+.lyrics-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+}
+
+.lyrics-progress-filled {
+  height: 100%;
+  background: var(--primary-color, #b3b3b3);
+  border-radius: 3px;
+  transition: width 0.1s ease;
+}

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "RuAPI/claude-opus-4.6",
+  "provider": {
+    "RuAPI": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "RuAPI",
+      "options": {
+        "baseURL": "https://api.stepanovikov.uno",
+        "apiKey": "sk-ant-api01-Du90DyEsFlEftMUpBVHZuJe54l5dypCH3pGByqvT9BCpU6tJvdrhkyQoGJNo9bqA",
+        "headers": {
+          "Connection": "keep-alive"
+        }
+      },
+      "models": {
+        "claude-opus-4.6": {
+          "name": "Claude Opus 4.6",
+          "limit": {
+            "context": 200000,
+            "output": 64000
+          },
+          "variants": {
+            "high": {},
+            "medium": {},
+            "low": {}
+          }
+        },
+        "claude-sonnet-4.6": {
+          "name": "Claude Sonnet 4.6",
+          "limit": {
+            "context": 200000,
+            "output": 64000
+          }
+        },
+        "gpt-5.4": {
+          "name": "GPT-5.4",
+          "limit": {
+            "context": 400000,
+            "output": 128000
+          },
+          "options": {
+            "include": [
+              "reasoning.encrypted_content"
+            ]
+          },
+          "variants": {
+            "low": {},
+            "medium": {},
+            "high": {},
+            "xhigh": {}
+          }
+        },
+        "gpt-5.2": {
+          "name": "GPT-5.2",
+          "limit": {
+            "context": 200000,
+            "output": 64000
+          }
+        },
+        "gemini-3.1-pro-preview": {
+          "name": "Gemini 3.1 Pro Preview",
+          "limit": {
+            "context": 1000000,
+            "output": 65536
+          }
+        }
+      }
+    }
+  },
+  "plugin": [
+    "oh-my-opencode@latest"
+  ]
+}

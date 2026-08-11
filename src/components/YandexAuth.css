@@ -1,0 +1,154 @@
+.auth-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+}
+
+.auth-card {
+  background: #181818;
+  border-radius: 8px;
+  padding: 40px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.auth-card h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.auth-subtitle {
+  color: #b3b3b3;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  background: #282828;
+  border: 1px solid #3e3e3e;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #1ed760;
+}
+
+.form-group input::placeholder {
+  color: #757575;
+}
+
+.error-message {
+  background: rgba(229, 9, 20, 0.1);
+  color: #e50914;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.submit-button {
+  padding: 14px;
+  background: #1ed760;
+  border: none;
+  border-radius: 500px;
+  color: #000000;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: #1fdf64;
+  transform: scale(1.02);
+}
+
+.submit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.oauth-button {
+  padding: 12px;
+  background: transparent;
+  border: 1px solid #535353;
+  border-radius: 500px;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.oauth-button:hover {
+  border-color: #ffffff;
+}
+
+.auth-help {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #282828;
+  color: #b3b3b3;
+  font-size: 13px;
+}
+
+.auth-help ol {
+  margin-top: 8px;
+  padding-left: 20px;
+}
+
+.auth-help li {
+  margin-bottom: 4px;
+}
+/* Добавьте эти стили в конец файла */
+
+.input-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #757575;
+}
+
+.vpn-note {
+  margin-top: 12px;
+  padding: 8px;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 4px;
+  color: #ffc107;
+  font-size: 12px;
+}
+
+.auth-help strong {
+  color: #ffffff;
+  display: block;
+  margin-bottom: 8px;
+}
