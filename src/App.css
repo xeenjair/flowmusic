@@ -565,6 +565,18 @@ body {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
+}
+
+.sidebar-pill {
+  position: absolute;
+  left: -4px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--primary-color);
+  box-shadow: 0 0 8px var(--primary-color);
 }
 
 .playlist-item:hover {
@@ -1129,6 +1141,18 @@ body {
   transition: all 0.2s;
   align-items: center;
   margin: 2px 0;
+  animation: trackIn 0.35s ease-out both;
+}
+
+@keyframes trackIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .track-item:hover {

@@ -1653,6 +1653,7 @@ function App() {
                   <div className="playlist-name">{t('sidebar_favorites')}</div>
                   <div className="playlist-meta">{favorites.length} {t('main_playlist_tracks')}</div>
                 </div>
+                {selectedPlaylist?.type === 'favorites' && <motion.span layoutId="sidebar-pill" className="sidebar-pill" />}
               </div>
               <div className={`playlist-item ${selectedPlaylist?.type === 'recently-played' ? 'active' : ''}`} onClick={loadRecentlyPlayedTracks}>
                 <HistoryIcon className="playlist-icon" size={20} />
@@ -1660,6 +1661,7 @@ function App() {
                   <div className="playlist-name">{t('sidebar_history')}</div>
                   <div className="playlist-meta">{recentlyPlayed.length} {t('main_playlist_tracks')}</div>
                 </div>
+                {selectedPlaylist?.type === 'recently-played' && <motion.span layoutId="sidebar-pill" className="sidebar-pill" />}
               </div>
               <div className={`playlist-item ${selectedPlaylist?.id === 'local-tracks' ? 'active' : ''}`} onClick={loadLocalTracksPlaylist}>
                 <NoteIcon className="playlist-icon" size={20} />
@@ -1672,6 +1674,7 @@ function App() {
                     <AddIcon size={16} />
                   </button>
                 </div>
+                {selectedPlaylist?.id === 'local-tracks' && <motion.span layoutId="sidebar-pill" className="sidebar-pill" />}
               </div>
             </div>
             
@@ -1693,6 +1696,7 @@ function App() {
                       <HeartIcon size={16} filled={favoritePlaylists.some(fp => fp.id === pl.id)} />
                     </button>
                   </div>
+                  {selectedPlaylist?.name === pl.title && selectedPlaylist?.type === 'yandex' && <motion.span layoutId="sidebar-pill" className="sidebar-pill" />}
                 </div>
               ))}
             </div>
@@ -1711,6 +1715,7 @@ function App() {
                       <DeleteIcon size={16} />
                     </button>
                   </div>
+                  {selectedPlaylist?.id === pl.id && <motion.span layoutId="sidebar-pill" className="sidebar-pill" />}
                 </div>
               ))}
             </div>
@@ -1803,7 +1808,7 @@ function App() {
         )}
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={activeTab === 'search' && selectedArtist ? 'artist' : activeTab}
+            key={activeTab === 'search' && selectedArtist ? 'artist' : `${activeTab}-${selectedPlaylist?.id || selectedPlaylist?.type || 'default'}`}
             className="content-body"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1868,6 +1873,7 @@ function App() {
                       </div>
                       {artistTracks.map((track, idx) => (
                         <div key={track.id} className={`track-item ${currentTrack?.id === track.id ? 'playing' : ''} ${nextTrack?.id === track.id ? 'next' : ''}`}
+                          style={{ animationDelay: `${Math.min(idx * 0.04, 1)}s` }}
                           onClick={() => playTrack(track)}
                           onContextMenu={(e) => handleContextMenu(e, track)}
                         >
@@ -2022,8 +2028,8 @@ function App() {
                       <div className="track-album">{t('main_album_header')}</div>
                       <div className="track-duration">⏱</div>
                     </div>
-                    {displayTracks.map((track, idx) => (
-                      <div key={track.id} className={`track-item ${currentTrack?.id === track.id ? 'playing' : ''} ${nextTrack?.id === track.id ? 'next' : ''}`} onClick={() => playTrack(track)} onContextMenu={(e) => handleContextMenu(e, track)}>
+{displayTracks.map((track, idx) => (
+                    <div key={track.id} className={`track-item ${currentTrack?.id === track.id ? 'playing' : ''} ${nextTrack?.id === track.id ? 'next' : ''}`} style={{ animationDelay: `${Math.min(idx * 0.04, 1)}s` }} onClick={() => playTrack(track)} onContextMenu={(e) => handleContextMenu(e, track)}>
                         <div className="track-number">
                           {currentTrack?.id === track.id && isLoadingTrack ? '⏳' : currentTrack?.id === track.id && isPlaying ? '🔊' : nextTrack?.id === track.id ? '⏭' : idx + 1}
                         </div>
