@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Titlebar from './components/Titlebar';
 import LyricsView from './components/LyricsView';
+import PlayerProgress from './components/PlayerProgress';
 import SettingsView from './components/SettingsView';
 import SubscriptionModal from './components/SubscriptionModal';
 import YandexAuth from './components/YandexAuth';
@@ -2263,34 +2264,15 @@ function App() {
                     <NextIcon size={20} />
                   </button>
                 </div>
-                <div className="player-progress">
-                  <span className="player-time">{formatTime(currentTime)}</span>
-                  <div className="progress-bar" onMouseDown={(e) => {
-                    const bar = e.currentTarget;
-                    const doSeek = (clientX) => {
-                      const rect = bar.getBoundingClientRect();
-                      const percent = (clientX - rect.left) / rect.width;
-                      const newTime = percent * duration;
-                      const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
-                      if (audio && !isNaN(newTime)) { audio.currentTime = newTime; setCurrentTime(newTime); }
-                    };
-                    doSeek(e.clientX);
-
-                    const handleMouseMove = (moveEvent) => {
-                      doSeek(moveEvent.clientX);
-                    };
-                    const handleMouseUp = () => {
-                      document.removeEventListener('mousemove', handleMouseMove);
-                      document.removeEventListener('mouseup', handleMouseUp);
-                    };
-                    document.addEventListener('mousemove', handleMouseMove);
-                    document.addEventListener('mouseup', handleMouseUp);
-                  }}>
-                    <div className="progress-filled" style={{ width: `${duration ? Math.min((currentTime / duration) * 100, 100) : 0}%`, background: settings.primaryColor }} />
-                    <div className="progress-handle" style={{ left: `${duration ? Math.min((currentTime / duration) * 100, 100) : 0}%` }} />
-                  </div>
-                  <span className="player-time">{formatTime(duration)}</span>
-                </div>
+                <PlayerProgress
+                  getCurrentTime={getCurrentTime}
+                  duration={duration}
+                  primaryColor={settings.primaryColor}
+                  onSeek={(newTime) => {
+                    const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
+                    if (audio && !isNaN(newTime)) { audio.currentTime = newTime; setCurrentTime(newTime); }
+                  }}
+                />
               </div>
               <div className="player-controls-right">
                 <button className="player-btn player-shuffle" onClick={toggleShuffle}>
