@@ -3,6 +3,28 @@ import { motion } from 'framer-motion';
 import { PrevIcon, PlayIcon, PauseIcon, NextIcon, AddIcon } from './icons/Icons';
 import './LyricsView.css';
 
+// Мемоизированная строка текста: перерендер только при реальном изменении
+// (isActive/isPassed/цвет) — при 30fps-таймере не перерисовываются все 100 строк
+const LyricLine = React.memo(function LyricLine({ text, isActive, isPassed, highlightColor, secondaryColor }) {
+  return (
+    <motion.div
+      className={`lyrics-line ${isActive ? 'active' : ''} ${isPassed ? 'passed' : ''}`}
+      style={{ color: isActive ? highlightColor : secondaryColor }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+    >
+      {text}
+    </motion.div>
+  );
+}, (prev, next) =>
+  prev.text === next.text &&
+  prev.isActive === next.isActive &&
+  prev.isPassed === next.isPassed &&
+  prev.highlightColor === next.highlightColor &&
+  prev.secondaryColor === next.secondaryColor
+);
+
 const LyricsView = React.memo(function LyricsView({ track, currentTime, duration, volume, onVolumeChange, isPlaying, onPlayPause, onNext, onPrevious, onSeek, isLoading, onClose, settings, t }) {
   const [lyrics, setLyrics] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -356,18 +378,14 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, duration
             <div ref={lyricsRef}>
               {parsedLyricsRef.current.length > 0 ? (
                 parsedLyricsRef.current.map((line, index) => (
-                  <motion.div
+                  <LyricLine
                     key={index}
-                    className={`lyrics-line ${index === activeLineIndex ? 'active' : ''} ${index < activeLineIndex ? 'passed' : ''}`}
-                    style={{
-                      color: index === activeLineIndex ? highlightColor : secondaryColor
-                    }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.25, ease: 'easeOut' }}
-                  >
-                    {line.text}
-                  </motion.div>
+                    text={line.text}
+                    isActive={index === activeLineIndex}
+                    isPassed={index < activeLineIndex}
+                    highlightColor={highlightColor}
+                    secondaryColor={secondaryColor}
+                  />
                 ))
               ) : (
                 formatPlainLyrics(lyrics.plain).map((line, index) => (

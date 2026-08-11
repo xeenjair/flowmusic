@@ -576,6 +576,28 @@ function App() {
     return () => window.removeEventListener('lyrics:seek', handleLyricsSeek);
   }, []);
 
+  // Высокочастотный таймер времени для режима Lyrics (30fps вместо ~4fps timeupdate)
+  // — подсветка строк переключается точно в тайминг, без задержки
+  useEffect(() => {
+    if (activeTab !== 'lyrics') return;
+    let rafId;
+    let lastTime = -1;
+    const tick = () => {
+      const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
+      if (audio && isPlaying && !audio.paused) {
+        const t = audio.currentTime;
+        // Обновляем только при заметном изменении (>30мс), чтобы не спамить рендеры
+        if (Math.abs(t - lastTime) >= 0.03) {
+          lastTime = t;
+          setCurrentTime(t);
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [activeTab, isPlaying]);
+
   useEffect(() => {
     document.addEventListener('click', closeContextMenu);
     return () => document.removeEventListener('click', closeContextMenu);

@@ -317,16 +317,14 @@
   font-size: 28px;
   font-weight: 500;
   color: #6a6a6a;
-  transition: color 0.25s ease-out, opacity 0.25s ease-out, transform 0.25s ease-out;
-  transform-origin: left center;
+  transition: color 0.15s ease-out, opacity 0.15s ease-out, text-shadow 0.15s ease-out;
   padding: 12px 0;
   line-height: 1.4;
 }
 
 .lyrics-line.active {
   color: #ffffff;
-  font-weight: 700;
-  transform: scale(1.06);
+  text-shadow: 0 0 14px currentColor;
 }
 
 .lyrics-line.passed {
