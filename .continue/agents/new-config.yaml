@@ -1,8 +1,0 @@
-name: Default Config
-version: 1.0.0
-schema: v1
-models:
-  - name: Claude Opus 4.6
-    provider: OpenAI Compatible
-    model: claude-opus-4-6
-    apiKey: sk-ant-api01-Du90DyEsFlEftMUpBVHZuJe54l5dypCH3pGByqvT9BCpU6tJvdrhkyQoGJNo9bqA
