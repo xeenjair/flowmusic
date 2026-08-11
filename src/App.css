@@ -791,7 +791,19 @@ body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  position: relative;
+}
+
+.nav-pill {
+  position: absolute;
+  bottom: -6px;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--primary-color);
+  box-shadow: 0 0 8px var(--primary-color);
 }
 
 .top-nav-item:hover {

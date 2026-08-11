@@ -1767,23 +1767,49 @@ function App() {
             </button>
           </div>
             <div className="top-nav-center">
-              <button className={`top-nav-item ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
+              <motion.button
+                layout
+                className={`top-nav-item ${activeTab === 'home' ? 'active' : ''}`}
+                onClick={() => setActiveTab('home')}
+                whileTap={{ scale: 0.95 }}
+              >
                 <HomeIcon className="top-nav-icon" size={20} />
                 <span>{t('nav_home')}</span>
-              </button>
-              <button className={`top-nav-item ${activeTab === 'search' ? 'active' : ''}`} onClick={() => setActiveTab('search')}>
+                {activeTab === 'home' && <motion.span layoutId="nav-pill" className="nav-pill" />}
+              </motion.button>
+              <motion.button
+                layout
+                className={`top-nav-item ${activeTab === 'search' ? 'active' : ''}`}
+                onClick={() => setActiveTab('search')}
+                whileTap={{ scale: 0.95 }}
+              >
                 <SearchIcon className="top-nav-icon" size={20} />
                 <span>{t('nav_search')}</span>
-              </button>
-              <button className={`top-nav-item ${activeTab === 'lyrics' ? 'active' : ''}`} onClick={() => setActiveTab('lyrics')}>
+                {activeTab === 'search' && <motion.span layoutId="nav-pill" className="nav-pill" />}
+              </motion.button>
+              <motion.button
+                layout
+                className={`top-nav-item ${activeTab === 'lyrics' ? 'active' : ''}`}
+                onClick={() => setActiveTab('lyrics')}
+                whileTap={{ scale: 0.95 }}
+              >
                 <LyricsIcon className="top-nav-icon" size={20} />
                 <span>{t('nav_lyrics')}</span>
-              </button>
+                {activeTab === 'lyrics' && <motion.span layoutId="nav-pill" className="nav-pill" />}
+              </motion.button>
             </div>
             <div className="top-nav-right"></div>
           </div>
         )}
-        <div className="content-body">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeTab === 'search' && selectedArtist ? 'artist' : activeTab}
+            className="content-body"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+          >
           {activeTab === 'search' && (
             <div className="search-container">
               <div className="search-header"><h2>{t('nav_search')}</h2></div>
@@ -2030,7 +2056,8 @@ function App() {
               )}
             </>
           )}
-        </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
       
       {contextMenu && (
