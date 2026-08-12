@@ -68,6 +68,11 @@ const getUserColorStyle = (color) => {
   return styles[color] || styles.default;
 };
 
+const avatarSrc = (filePath, fallback = '') => {
+  if (!filePath) return fallback;
+  return 'file:///' + filePath.replace(/\\/g, '/');
+};
+
 // Translations
 const translations = {
   ru: {
@@ -153,6 +158,7 @@ const translations = {
     'profile_playlists': 'Плейлистов',
     'profile_last_track': 'Последний трек',
     'profile_nickname': 'Никнейм',
+    'profile_change_photo': 'Изменить фото',
     'profile_enter_nickname': 'Введите никнейм',
     'profile_nickname_unique': 'Никнейм должен быть уникальным',
     'profile_color': 'Цвет ника',
@@ -270,6 +276,7 @@ const translations = {
     'profile_playlists': 'Playlists',
     'profile_last_track': 'Last track',
     'profile_nickname': 'Nickname',
+    'profile_change_photo': 'Change photo',
     'profile_enter_nickname': 'Enter nickname',
     'profile_nickname_unique': 'Nickname must be unique',
     'profile_color': 'Nickname color',
@@ -362,7 +369,8 @@ function App() {
     enableDiscordRPC: false,
     userRole: 'admin',
     customNickname: '',
-    theme: 'dark'
+    theme: 'dark',
+    avatar: ''
   });
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -499,10 +507,21 @@ function App() {
     };
   }, [tracks, currentTrack, isPlaying, activeTab, searchResults]);
 
+  // Ref-ссылки на актуальные функции управления, чтобы обработчик клавиатуры
+  // всегда вызывал свежие версии (избегаем циклической инициализации)
+  const togglePlayPauseRef = useRef(() => {});
+  const playNextRef = useRef(() => {});
+  const playPreviousRef = useRef(() => {});
+
+  // Обновляем рефы на каждом рендере после определения функций
+  useEffect(() => {
+    togglePlayPauseRef.current = () => togglePlayPause();
+    playNextRef.current = () => playNext();
+    playPreviousRef.current = () => playPrevious();
+  });
+
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.code !== 'Space') return;
-
       const target = event.target;
       const tagName = target?.tagName;
       const isTypingField =
@@ -510,15 +529,50 @@ function App() {
         tagName === 'TEXTAREA' ||
         target?.isContentEditable;
 
-      if (isTypingField) return;
+      // Пробел — play/pause
+      if (event.code === 'Space') {
+        if (isTypingField) return;
+        event.preventDefault();
+        togglePlayPauseRef.current();
+        return;
+      }
 
-      event.preventDefault();
-      togglePlayPause();
+      // Ctrl + → — следующий трек
+      if (event.ctrlKey && event.code === 'ArrowRight') {
+        event.preventDefault();
+        event.stopPropagation();
+        playNextRef.current();
+        return;
+      }
+
+      // Ctrl + ← — предыдущий трек
+      if (event.ctrlKey && event.code === 'ArrowLeft') {
+        event.preventDefault();
+        event.stopPropagation();
+        playPreviousRef.current();
+        return;
+      }
+
+      // Мультимедийные клавиши — следующий трек
+      if (event.code === 'MediaTrackNext') {
+        event.preventDefault();
+        event.stopPropagation();
+        playNextRef.current();
+        return;
+      }
+
+      // Мультимедийные клавиши — предыдущий трек
+      if (event.code === 'MediaTrackPrevious') {
+        event.preventDefault();
+        event.stopPropagation();
+        playPreviousRef.current();
+        return;
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentTrack, isPlaying, activeTab, tracks, searchResults]);
+  }, []);
 
   useEffect(() => {
     const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
@@ -526,43 +580,69 @@ function App() {
   }, [volume]);
 
   // Discord RPC
-  useEffect(() => {
-    if (settings.enableDiscordRPC) {
-      let activity;
-      if (currentTrack) {
-        activity = {
-          details: `Playing: ${currentTrack.title}`,
-          state: `by ${currentTrack.artists}`,
-          largeImageKey: currentTrack.cover || 'logo',
-          largeImageText: `${currentTrack.title} - ${currentTrack.artists}`,
-          smallImageKey: isPlaying ? 'play' : 'pause',
-          smallImageText: isPlaying ? 'Playing' : 'Paused'
-        };
-
-        if (isPlaying && currentTrack.durationMs && currentTrack.durationMs > 0) {
-          // Add progress bar
-          const remaining = (currentTrack.durationMs / 1000) - currentTime;
-          activity.startTimestamp = Math.floor(Date.now() / 1000) - Math.floor(currentTime);
-          activity.endTimestamp = Math.floor(Date.now() / 1000) + Math.floor(remaining);
-          console.log('Discord progress bar:', {
-            currentTime,
-            duration: currentTrack.durationMs / 1000,
-            remaining,
-            startTimestamp: activity.startTimestamp,
-            endTimestamp: activity.endTimestamp
-          });
-        }
-      } else {
-        activity = {
-          details: 'Flowmusic',
-          state: 'Browsing music library',
-          largeImageKey: 'logo',
-          largeImageText: 'Flowmusic Player'
-        };
-      }
-      window.electron.discord.setActivity(activity);
+  const buildDiscordActivity = useCallback((playing) => {
+    if (!currentTrack) {
+      return {
+        details: 'Flowmusic',
+        state: 'Browsing music library',
+        largeImageKey: 'logo',
+        largeImageText: 'Flowmusic Player'
+      };
     }
-  }, [currentTrack, isPlaying, currentTime, settings.enableDiscordRPC]);
+
+    const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
+    const current = audio && !isNaN(audio.currentTime) ? audio.currentTime : currentTime;
+    const total = (audio && !isNaN(audio.duration) && audio.duration > 0)
+      ? audio.duration
+      : (currentTrack.durationMs ? currentTrack.durationMs / 1000 : 0);
+    const isActive = playing && total > 0;
+
+    const activity = {
+      details: `Playing: ${currentTrack.title}`,
+      state: `by ${currentTrack.artists}`,
+      largeImageKey: currentTrack.cover || 'logo',
+      largeImageText: `${currentTrack.title} - ${currentTrack.artists}`,
+      smallImageKey: isActive ? 'play' : 'pause',
+      smallImageText: isActive ? 'Playing' : 'Paused'
+    };
+
+    if (isActive) {
+      // Discord показывает прогресс-бар только когда заданы оба timestamp
+      activity.startTimestamp = Math.floor(Date.now() / 1000) - Math.floor(current);
+      activity.endTimestamp = Math.floor(Date.now() / 1000) + Math.floor(total - current);
+    }
+
+    return activity;
+  }, [currentTrack, currentTime]);
+
+  useEffect(() => {
+    if (!settings.enableDiscordRPC) return;
+
+    // Мгновенно обновляем активность при смене трека/паузы/воспроизведения
+    window.electron.discord.setActivity(buildDiscordActivity(isPlaying));
+
+    // Discord обновляет сам прогресс-бар по timestamps.
+    // Переустанавливаем активность раз в 15 секунд (rate limit Discord RPC),
+    // чтобы прогресс не сбрасывался.
+    const interval = setInterval(() => {
+      if (isPlaying && currentTrack) {
+        window.electron.discord.setActivity(buildDiscordActivity(true));
+      }
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [currentTrack, isPlaying, settings.enableDiscordRPC, buildDiscordActivity]);
+
+  // При перемотке мгновенно обновляем прогресс-бар (с троттлингом 3 сек)
+  const lastDiscordSeekRef = useRef(0);
+  useEffect(() => {
+    if (!settings.enableDiscordRPC || !isPlaying || !currentTrack) return;
+    const now = Date.now();
+    if (now - lastDiscordSeekRef.current < 3000) return;
+    lastDiscordSeekRef.current = now;
+    window.electron.discord.setActivity(buildDiscordActivity(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTime]);
 
   useEffect(() => {
     const handleLyricsSeek = (e) => {
@@ -759,6 +839,17 @@ function App() {
     } catch (err) {
       console.error('Failed to select GIF:', err);
       return null;
+    }
+  };
+
+  const handleSelectAvatar = async () => {
+    try {
+      const filePath = await window.electron.dialog.selectAvatar();
+      if (filePath) {
+        await saveSettings({ ...settings, avatar: filePath });
+      }
+    } catch (err) {
+      console.error('Failed to select avatar:', err);
     }
   };
 
@@ -1724,7 +1815,11 @@ function App() {
 
           <div className="sidebar-footer">
             <div className="user-info" onClick={() => setShowProfile(true)}>
-              <div className="user-avatar">👤</div>
+              {settings.avatar ? (
+                <img src={avatarSrc(settings.avatar)} alt="" className="user-avatar user-avatar-img" />
+              ) : (
+                <div className="user-avatar">👤</div>
+              )}
               <div className="user-name">
                 <span style={getUserColorStyle(settings.userColor)}>
                   {settings.customNickname || user?.login || 'Пользователь'}
@@ -2140,51 +2235,59 @@ function App() {
 
         {showProfile && (
           <div className="settings-overlay" onClick={() => setShowProfile(false)}>
-            <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-modal profile-modal-redesigned" onClick={(e) => e.stopPropagation()}>
+              {/* Шапка с аватаром */}
               <div className="profile-header">
-                <div className="profile-avatar-large">👤</div>
-                <div>
+                <button className="profile-avatar-wrap" onClick={handleSelectAvatar} title={t('profile_change_photo')}>
+                  {settings.avatar ? (
+                    <img src={avatarSrc(settings.avatar)} alt="" className="profile-avatar-large profile-avatar-img" />
+                  ) : (
+                    <div className="profile-avatar-large">👤</div>
+                  )}
+                  <span className="profile-avatar-edit">📷</span>
+                </button>
+                <div className="profile-header-text">
                   <h2 style={getUserColorStyle(settings.userColor)}>
-                  {settings.customNickname || user?.login || t('user_default')}
+                    {settings.customNickname || user?.login || t('user_default')}
                     <RoleBadge role={settings.userRole} size="large" />
                   </h2>
-                  <p>{user?.email || 'user@yandex.ru'}</p>
+                  <p>{user?.email || t('user_default')}</p>
                 </div>
               </div>
 
-              <div className="profile-info-frame">
-                <div className="profile-service-info">
-                  <span className="service-label">{t('service_current')}: {user?.service === 'vk' ? 'VK Музыка' : t('service_yandex')}</span>
-                </div>
-
-                <div className="profile-stats-section">
-                  <h3>{t ? t('profile_stats') : 'Статистика'}</h3>
-                  <div className="stats-grid">
-                    <div className="stat-item">
-                      <span className="stat-icon">❤️</span>
-                      <div>
-                        <div className="stat-value">{favorites.length}</div>
-                        <div className="stat-label">{t ? t('profile_favorite_tracks') : 'Любимых треков'}</div>
+              {/* Две колонки: слева статистика, справа настройки профиля */}
+              <div className="profile-columns">
+                {/* Левая колонка — статистика и последний трек */}
+                <div className="profile-col-left">
+                  <div className="profile-stats-section profile-card-block">
+                    <h3>{t ? t('profile_stats') : 'Статистика'}</h3>
+                    <div className="stats-grid">
+                      <div className="stat-item">
+                        <span className="stat-icon">❤️</span>
+                        <div>
+                          <div className="stat-value">{favorites.length}</div>
+                          <div className="stat-label">{t ? t('profile_favorite_tracks') : 'Любимых треков'}</div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-icon">🎵</span>
-                      <div>
-                        <div className="stat-value">{recentlyPlayed.length}</div>
-                        <div className="stat-label">{t ? t('profile_recent_tracks') : 'Недавних треков'}</div>
+                      <div className="stat-item">
+                        <span className="stat-icon">🎵</span>
+                        <div>
+                          <div className="stat-value">{recentlyPlayed.length}</div>
+                          <div className="stat-label">{t ? t('profile_recent_tracks') : 'Недавних треков'}</div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-icon">📂</span>
-                      <div>
-                        <div className="stat-value">{localPlaylists.length}</div>
-                        <div className="stat-label">{t ? t('profile_playlists') : 'Плейлистов'}</div>
+                      <div className="stat-item">
+                        <span className="stat-icon">📂</span>
+                        <div>
+                          <div className="stat-value">{localPlaylists.length}</div>
+                          <div className="stat-label">{t ? t('profile_playlists') : 'Плейлистов'}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {recentlyPlayed.length > 0 && (
-                    <div className="favorite-track">
+                    <div className="favorite-track profile-card-block">
                       <h4>{t ? t('profile_last_track') : 'Последний трек'}</h4>
                       <div className="track-mini">
                         {recentlyPlayed[0].cover ? (
@@ -2200,70 +2303,73 @@ function App() {
                     </div>
                   )}
                 </div>
-              </div>
 
-              <div className="profile-nickname">
-                <h4>{t ? t('profile_nickname') : 'Никнейм'}</h4>
-                <input
-                  type="text"
-                  value={settings.customNickname || user?.login || ''}
-                  onChange={async (e) => {
-                    const newNickname = e.target.value.trim();
-                    if (window.electron?.nickname && newNickname) {
-                      const result = await window.electron.nickname.set(newNickname);
-                      if (result?.success) {
-                        saveSettings({ customNickname: newNickname });
-                        const info = await window.electron.nickname.getCooldown();
-                        if (info) setNicknameCooldown(info);
-                      } else if (result?.message) {
-                        alert(result.message);
-                      }
-                    } else {
-                      saveSettings({ customNickname: newNickname });
-                    }
-                  }}
-                  disabled={!nicknameCooldown.canChange}
-                  placeholder={t ? t('profile_enter_nickname') : 'Введите никнейм'}
-                  className="profile-nickname-input"
-                />
-                {!nicknameCooldown.canChange && nicknameCooldown.remaining > 0 && (
-                  <p className="profile-nickname-hint" style={{ color: '#ff6b6b' }}>
-                    Можно сменить через {Math.ceil(nicknameCooldown.remaining / (1000 * 60 * 60 * 24))} дн.
-                  </p>
-                )}
-                {nicknameCooldown.canChange && (
-                  <p className="profile-nickname-hint">
-                    {t ? t('profile_nickname_unique') : 'Никнейм можно менять раз в 7 дней'}
-                  </p>
-                )}
-              </div>
+                {/* Правая колонка — настройки профиля */}
+                <div className="profile-col-right">
+                  <div className="profile-nickname profile-card-block">
+                    <h4>{t ? t('profile_nickname') : 'Никнейм'}</h4>
+                    <input
+                      type="text"
+                      value={settings.customNickname || user?.login || ''}
+                      onChange={async (e) => {
+                        const newNickname = e.target.value.trim();
+                        if (window.electron?.nickname && newNickname) {
+                          const result = await window.electron.nickname.set(newNickname);
+                          if (result?.success) {
+                            saveSettings({ customNickname: newNickname });
+                            const info = await window.electron.nickname.getCooldown();
+                            if (info) setNicknameCooldown(info);
+                          } else if (result?.message) {
+                            alert(result.message);
+                          }
+                        } else {
+                          saveSettings({ customNickname: newNickname });
+                        }
+                      }}
+                      disabled={!nicknameCooldown.canChange}
+                      placeholder={t ? t('profile_enter_nickname') : 'Введите никнейм'}
+                      className="profile-nickname-input"
+                    />
+                    {!nicknameCooldown.canChange && nicknameCooldown.remaining > 0 && (
+                      <p className="profile-nickname-hint" style={{ color: '#ff6b6b' }}>
+                        Можно сменить через {Math.ceil(nicknameCooldown.remaining / (1000 * 60 * 60 * 24))} дн.
+                      </p>
+                    )}
+                    {nicknameCooldown.canChange && (
+                      <p className="profile-nickname-hint">
+                        {t ? t('profile_nickname_unique') : 'Никнейм можно менять раз в 7 дней'}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="profile-color">
-                <h4>{t ? t('profile_color') : 'Цвет ника'}</h4>
-                <select
-                  value={settings.userColor || 'default'}
-                  onChange={(e) => {
-                    saveSettings({ ...settings, userColor: e.target.value });
-                  }}
-                  className="profile-color-select"
-                >
-                  <option value="default">{t ? t('profile_color_default') : 'По умолчанию'}</option>
-                  <option value="red">{t ? t('profile_color_red') : 'Красный'}</option>
-                  <option value="blue">{t ? t('profile_color_blue') : 'Синий'}</option>
-                  <option value="green">{t ? t('profile_color_green') : 'Зеленый'}</option>
-                  <option value="purple">{t ? t('profile_color_purple') : 'Фиолетовый'}</option>
-                  <option value="gold">{t ? t('profile_color_gold') : 'Золотой'}</option>
-                  <option value="rainbow">{t ? t('profile_color_rainbow') : 'Радуга'}</option>
-                  <option value="sunset">{t ? t('profile_color_sunset') : 'Закат'}</option>
-                  <option value="ocean">{t ? t('profile_color_ocean') : 'Океан'}</option>
-                </select>
-              </div>
+                  <div className="profile-color profile-card-block">
+                    <h4>{t ? t('profile_color') : 'Цвет ника'}</h4>
+                    <select
+                      value={settings.userColor || 'default'}
+                      onChange={(e) => {
+                        saveSettings({ ...settings, userColor: e.target.value });
+                      }}
+                      className="profile-color-select"
+                    >
+                      <option value="default">{t ? t('profile_color_default') : 'По умолчанию'}</option>
+                      <option value="red">{t ? t('profile_color_red') : 'Красный'}</option>
+                      <option value="blue">{t ? t('profile_color_blue') : 'Синий'}</option>
+                      <option value="green">{t ? t('profile_color_green') : 'Зеленый'}</option>
+                      <option value="purple">{t ? t('profile_color_purple') : 'Фиолетовый'}</option>
+                      <option value="gold">{t ? t('profile_color_gold') : 'Золотой'}</option>
+                      <option value="rainbow">{t ? t('profile_color_rainbow') : 'Радуга'}</option>
+                      <option value="sunset">{t ? t('profile_color_sunset') : 'Закат'}</option>
+                      <option value="ocean">{t ? t('profile_color_ocean') : 'Океан'}</option>
+                    </select>
+                  </div>
 
-          <div className="profile-actions">
-            <button className="profile-logout-btn" onClick={() => { handleLogout(); setShowProfile(false); }}>
-              <span>{t('sidebar_logout')}</span>
-            </button>
-          </div>
+                  <div className="profile-actions profile-card-block">
+                    <button className="profile-logout-btn" onClick={() => { handleLogout(); setShowProfile(false); }}>
+                      <span>{t('sidebar_logout')}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

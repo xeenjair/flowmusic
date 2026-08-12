@@ -463,6 +463,25 @@ function setupIpcHandlers() {
     return null;
   });
 
+  ipcMain.handle('dialog:select-avatar', async () => {
+    if (!mainWindow) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Выберите фото профиля',
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'] }],
+      properties: ['openFile']
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+
+    const fs = require('fs');
+    const avatarDir = path.join(app.getPath('userData'), 'avatars');
+    if (!fs.existsSync(avatarDir)) fs.mkdirSync(avatarDir, { recursive: true });
+
+    const ext = path.extname(result.filePaths[0]).toLowerCase();
+    const destPath = path.join(avatarDir, 'profile' + ext);
+    fs.copyFileSync(result.filePaths[0], destPath);
+    return destPath;
+  });
+
   // ============ ТЕКСТЫ ПЕСЕН ============
   
   // Получение текста

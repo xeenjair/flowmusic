@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 // Рендерится ТОЛЬКО этот блок — App и Discord-статус не затрагиваются.
 function PlayerProgress({ getCurrentTime, duration, primaryColor, onSeek }) {
   const [liveTime, setLiveTime] = useState(0);
+  const [dragging, setDragging] = useState(false);
   const lastTimeRef = useRef(0);
 
   useEffect(() => {
@@ -34,8 +35,9 @@ function PlayerProgress({ getCurrentTime, duration, primaryColor, onSeek }) {
 
   return (
     <div className="player-progress">
-      <span className="player-time">{formatTime(liveTime)}</span>
-      <div className="progress-bar" onMouseDown={(e) => {
+      <div className={`progress-bar${dragging ? ' dragging' : ''}`} onMouseDown={(e) => {
+        e.preventDefault();
+        setDragging(true);
         const bar = e.currentTarget;
         const doSeek = (clientX) => {
           const rect = bar.getBoundingClientRect();
@@ -47,6 +49,7 @@ function PlayerProgress({ getCurrentTime, duration, primaryColor, onSeek }) {
 
         const handleMouseMove = (moveEvent) => doSeek(moveEvent.clientX);
         const handleMouseUp = () => {
+          setDragging(false);
           document.removeEventListener('mousemove', handleMouseMove);
           document.removeEventListener('mouseup', handleMouseUp);
         };
@@ -56,7 +59,10 @@ function PlayerProgress({ getCurrentTime, duration, primaryColor, onSeek }) {
         <div className="progress-filled" style={{ width: `${percent}%`, background: primaryColor }} />
         <div className="progress-handle" style={{ left: `${percent}%` }} />
       </div>
-      <span className="player-time">{formatTime(duration)}</span>
+      <div className="progress-times">
+        <span className="player-time">{formatTime(liveTime)}</span>
+        <span className="player-time">{formatTime(duration)}</span>
+      </div>
     </div>
   );
 }

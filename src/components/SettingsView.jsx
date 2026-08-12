@@ -83,15 +83,6 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
       ]
     },
     {
-      title: isEnglish ? 'Interface' : 'Интерфейс',
-      subtitle: isEnglish ? 'Main styling parameters' : 'Основные параметры оформления',
-      items: [
-        { key: 'darkTheme', label: isEnglish ? 'Dark theme' : 'Тёмная тема', type: 'switch', value: localSettings.darkTheme !== false, hint: isEnglish ? 'Use dark palette by default' : 'Использовать тёмную палитру по умолчанию' },
-        { key: 'enableLiquidGlass', label: 'Liquid Glass', type: 'switch', value: localSettings.enableLiquidGlass || false, hint: isEnglish ? 'Add glass transparent panels' : 'Добавить стеклянные полупрозрачные панели' },
-        { key: 'enableColorFromMusic', label: isEnglish ? 'Color from music' : 'Цвет под музыку', type: 'switch', value: localSettings.enableColorFromMusic !== false, hint: isEnglish ? 'Adjust interface shade to cover' : 'Подстраивать оттенок интерфейса под обложку' }
-      ]
-    },
-    {
       title: isEnglish ? 'Settings window colors' : 'Цвета окна настроек',
       subtitle: isEnglish ? 'Separate palette specifically for this screen' : 'Отдельная палитра именно для этого экрана',
       items: [
@@ -102,13 +93,12 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
       ]
     },
     {
-      title: isEnglish ? 'Animated background' : 'Анимированный фон',
-      subtitle: isEnglish ? 'Visual block without logic binding' : 'Визуальный блок без привязки к логике',
+      title: isEnglish ? 'Song lyrics colors' : 'Цвета текста песен',
+      subtitle: isEnglish ? 'Colors for lyrics mode' : 'Цвета для режима lyrics',
       items: [
-        { key: 'enableGifBackground', label: isEnglish ? 'Enable GIF background' : 'Включить GIF-фон', type: 'switch', value: localSettings.enableGifBackground || false, hint: isEnglish ? 'Show animated background' : 'Показывать анимированный задний фон' },
-        { key: 'gifOpacity', label: isEnglish ? 'Opacity' : 'Прозрачность', type: 'range', value: localSettings.gifOpacity ?? 0.3, min: 0, max: 1, step: 0.05, format: (v) => `${Math.round(v * 100)}%` },
-        { key: 'gifBlur', label: isEnglish ? 'Blur' : 'Размытие', type: 'range', value: localSettings.gifBlur ?? 0, min: 0, max: 20, step: 1, format: (v) => `${v}px` },
-        { key: 'gifPath', label: isEnglish ? 'Background source' : 'Источник фона', type: 'fake-file', value: localSettings.gifPath || '', hint: localSettings.gifPath ? (isEnglish ? 'File selected' : 'Файл выбран') : (isEnglish ? 'File not selected' : 'Файл не выбран') }
+        { key: 'lyricsHighlightColor', label: isEnglish ? 'Line accent' : 'Акцент строки', type: 'color', value: localSettings.lyricsHighlightColor || '#ffdb4d' },
+        { key: 'lyricsTextColor', label: isEnglish ? 'Main text' : 'Основной текст', type: 'color', value: localSettings.lyricsTextColor || '#ffffff' },
+        { key: 'lyricsSecondaryColor', label: isEnglish ? 'Secondary text' : 'Вторичный текст', type: 'color', value: localSettings.lyricsSecondaryColor || '#888888' }
       ]
     }
   ]), [localSettings, isEnglish]);
@@ -162,6 +152,27 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
       ]
     },
     {
+      title: isEnglish ? 'Interface' : 'Интерфейс',
+      subtitle: isEnglish ? 'Main styling parameters' : 'Основные параметры оформления',
+      items: [
+        { key: 'darkTheme', label: isEnglish ? 'Dark theme' : 'Тёмная тема', type: 'switch', value: localSettings.darkTheme !== false, hint: isEnglish ? 'Use dark palette by default' : 'Использовать тёмную палитру по умолчанию' },
+        { key: 'enableLiquidGlass', label: 'Liquid Glass', type: 'switch', value: localSettings.enableLiquidGlass || false, hint: isEnglish ? 'Add glass transparent panels' : 'Добавить стеклянные полупрозрачные панели' },
+        { key: 'enableColorFromMusic', label: isEnglish ? 'Color from music' : 'Цвет под музыку', type: 'switch', value: localSettings.enableColorFromMusic !== false, hint: isEnglish ? 'Adjust interface shade to cover' : 'Подстраивать оттенок интерфейса под обложку' }
+      ]
+    }
+  ]), [localSettings, isEnglish]);
+
+  const effectsCards = useMemo(() => ([
+    {
+      title: isEnglish ? 'Visual effects' : 'Визуальные эффекты',
+      subtitle: isEnglish ? 'Additional atmosphere elements' : 'Дополнительные элементы атмосферы',
+      items: [
+        { key: 'enableVisualizer', label: isEnglish ? 'Visualizer' : 'Визуализатор', type: 'switch', value: localSettings.enableVisualizer || false },
+        { key: 'enableFullscreenCover', label: isEnglish ? 'Fullscreen cover' : 'Полноэкранная обложка', type: 'switch', value: localSettings.enableFullscreenCover || false },
+        { key: 'animationsEnabled', label: isEnglish ? 'Interface animations' : 'Анимации интерфейса', type: 'switch', value: localSettings.animationsEnabled !== false }
+      ]
+    },
+    {
       title: isEnglish ? 'Particles' : 'Частицы',
       subtitle: isEnglish ? 'Animated background effects' : 'Анимированные эффекты на фоне',
       items: [
@@ -182,37 +193,17 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
           { value: 'web', label: isEnglish ? 'Web' : 'Сеть' },
           { value: 'crosses', label: isEnglish ? 'Crosses' : 'Кресты' },
           { value: 'rings', label: isEnglish ? 'Rings' : 'Кольца' }
-        ] },
-        { key: 'enableDiscordRPC', label: isEnglish ? 'Discord Rich Presence' : 'Discord Rich Presence', type: 'switch', value: localSettings.enableDiscordRPC || false, hint: isEnglish ? 'Show music status in Discord' : 'Показывать статус музыки в Discord' },
-        { key: 'userRole', label: isEnglish ? 'User Role' : 'Роль пользователя', type: 'choice', choiceValue: 'user', value: localSettings.userRole || 'user', options: [
-          { value: 'admin', label: isEnglish ? 'Admin' : 'Админ' },
-          { value: 'sapphire', label: isEnglish ? 'Sapphire' : 'Сапфир' },
-          { value: 'max', label: isEnglish ? 'Max' : 'Макс' },
-          { value: 'pro', label: isEnglish ? 'Pro' : 'Про' },
-          { value: 'user', label: isEnglish ? 'User' : 'Пользователь' }
-        ] },
-
-      ]
-    }
-  ]), [localSettings, isEnglish]);
-
-  const effectsCards = useMemo(() => ([
-    {
-      title: isEnglish ? 'Visual effects' : 'Визуальные эффекты',
-      subtitle: isEnglish ? 'Additional atmosphere elements' : 'Дополнительные элементы атмосферы',
-      items: [
-        { key: 'enableVisualizer', label: isEnglish ? 'Visualizer' : 'Визуализатор', type: 'switch', value: localSettings.enableVisualizer || false },
-        { key: 'enableFullscreenCover', label: isEnglish ? 'Fullscreen cover' : 'Полноэкранная обложка', type: 'switch', value: localSettings.enableFullscreenCover || false },
-        { key: 'animationsEnabled', label: isEnglish ? 'Interface animations' : 'Анимации интерфейса', type: 'switch', value: localSettings.animationsEnabled !== false }
+        ] }
       ]
     },
     {
-      title: isEnglish ? 'Song lyrics' : 'Текст песен',
-      subtitle: isEnglish ? 'Colors for lyrics mode' : 'Цвета для режима lyrics',
+      title: isEnglish ? 'Animated background' : 'Анимированный фон',
+      subtitle: isEnglish ? 'Visual block without logic binding' : 'Визуальный блок без привязки к логике',
       items: [
-        { key: 'lyricsHighlightColor', label: isEnglish ? 'Line accent' : 'Акцент строки', type: 'color', value: localSettings.lyricsHighlightColor || '#ffdb4d' },
-        { key: 'lyricsTextColor', label: isEnglish ? 'Main text' : 'Основной текст', type: 'color', value: localSettings.lyricsTextColor || '#ffffff' },
-        { key: 'lyricsSecondaryColor', label: isEnglish ? 'Secondary text' : 'Вторичный текст', type: 'color', value: localSettings.lyricsSecondaryColor || '#888888' }
+        { key: 'enableGifBackground', label: isEnglish ? 'Enable GIF background' : 'Включить GIF-фон', type: 'switch', value: localSettings.enableGifBackground || false, hint: isEnglish ? 'Show animated background' : 'Показывать анимированный задний фон' },
+        { key: 'gifOpacity', label: isEnglish ? 'Opacity' : 'Прозрачность', type: 'range', value: localSettings.gifOpacity ?? 0.3, min: 0, max: 1, step: 0.05, format: (v) => `${Math.round(v * 100)}%` },
+        { key: 'gifBlur', label: isEnglish ? 'Blur' : 'Размытие', type: 'range', value: localSettings.gifBlur ?? 0, min: 0, max: 20, step: 1, format: (v) => `${v}px` },
+        { key: 'gifPath', label: isEnglish ? 'Background source' : 'Источник фона', type: 'fake-file', value: localSettings.gifPath || '', hint: localSettings.gifPath ? (isEnglish ? 'File selected' : 'Файл выбран') : (isEnglish ? 'File not selected' : 'Файл не выбран') }
       ]
     }
   ]), [localSettings, isEnglish]);
@@ -243,6 +234,13 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
         { key: 'showNotifications', label: isEnglish ? 'Notifications when changing track' : 'Уведомления при смене трека', type: 'switch', value: localSettings.showNotifications || false },
         { key: 'cache', label: isEnglish ? 'Lyrics cache' : 'Кэш текстов', type: 'action', value: isEnglish ? 'Clear' : 'Очистить' },
         { key: 'version', label: isEnglish ? 'Version' : 'Версия', type: 'badge', value: 'flowmusic v2.0.0' }
+      ]
+    },
+    {
+      title: isEnglish ? 'Integrations' : 'Интеграции',
+      subtitle: isEnglish ? 'Connect external services' : 'Подключение внешних сервисов',
+      items: [
+        { key: 'enableDiscordRPC', label: isEnglish ? 'Discord Rich Presence' : 'Discord Rich Presence', type: 'switch', value: localSettings.enableDiscordRPC || false, hint: isEnglish ? 'Show music status in Discord' : 'Показывать статус музыки в Discord' }
       ]
     }
   ]), [localSettings, isEnglish]);
@@ -626,19 +624,6 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
             className="settings-scrollarea"
             ref={scrollAreaRef}
           >
-            <div className="settings-hero compact">
-              <div className="hero-copy">
-                <span className="hero-badge">UI concept</span>
-                <h3>{isEnglish ? 'Updated settings screen' : 'Обновлённый экран настроек'}</h3>
-                <p>{isEnglish ? 'Compact desktop screen with emphasis on convenient navigation, softer cards and separate palette for the settings themselves.' : 'Компактный desktop-экран с акцентом на удобную навигацию, более мягкие карточки и отдельную палитру для самих настроек.'}</p>
-              </div>
-              <div className="hero-preview compact">
-                <div className="preview-dot" />
-                <div className="preview-line short" />
-                <div className="preview-line" />
-              </div>
-            </div>
-
             <div className="settings-content">
               {renderCards()}
             </div>

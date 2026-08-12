@@ -378,6 +378,7 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, getCurre
                      onChange={(e) => onVolumeChange?.(parseFloat(e.target.value))}
                      className="lyrics-volume-slider"
                    />
+                   <span className="lyrics-volume-percent">{Math.round((volume ?? 0.7) * 100)}%</span>
                 </div>
               </div>
             </div>
@@ -470,15 +471,6 @@ const LyricsView = React.memo(function LyricsView({ track, currentTime, getCurre
             </motion.div>
           )}
         </motion.div>
-        <div className="lyrics-actions centered-actions above-cover">
-          {source && <span className="lyrics-source-badge">{getSourceText()}</span>}
-          <button className="lyrics-edit-btn" onClick={startEditing}>
-            {hasCustomLyrics ? '✏️' : '➕'}
-          </button>
-          {hasCustomLyrics && (
-            <button className="lyrics-delete-btn" onClick={deleteCustomLyrics}>🗑️</button>
-          )}
-        </div>
         <div className="cover-info-centered">
           <h2 style={{ color: textColor }}>{track.title}</h2>
           <p style={{ color: secondaryColor }}>{track.artists}</p>

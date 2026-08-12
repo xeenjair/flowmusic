@@ -49,7 +49,8 @@ contextBridge.exposeInMainWorld('electron', {
     save: (settings) => ipcRenderer.invoke('settings:save', settings)
   },
   dialog: {
-    selectGif: () => ipcRenderer.invoke('dialog:select-gif')
+    selectGif: () => ipcRenderer.invoke('dialog:select-gif'),
+    selectAvatar: () => ipcRenderer.invoke('dialog:select-avatar')
   },
   clipboard: {
     readText: () => ipcRenderer.invoke('clipboard:read-text')
