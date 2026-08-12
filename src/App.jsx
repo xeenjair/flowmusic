@@ -15,7 +15,7 @@ import {
   VolumeIcon, HeartIcon, SettingsIcon,
   CloseIcon, AddIcon, DeleteIcon,
   NoteIcon, HistoryIcon, PlaylistIcon,
-  MixIcon, RepeatIcon
+  MixIcon, RepeatIcon, SpeakerIcon, TimeIcon
 } from './components/icons/Icons';
 import './App.css';
 
@@ -71,6 +71,24 @@ const getUserColorStyle = (color) => {
 const avatarSrc = (filePath, fallback = '') => {
   if (!filePath) return fallback;
   return 'file:///' + filePath.replace(/\\/g, '/');
+};
+
+// Font stacks for each selectable font family
+const FONT_STACKS = {
+  minecraft: "'Minecraft', 'VT323', monospace",
+  default: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif",
+  inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  jetbrains: "'JetBrains Mono', Consolas, 'Courier New', monospace",
+  playfair: "'Playfair Display', Georgia, 'Times New Roman', serif",
+  caveat: "'Caveat', 'Comic Sans MS', 'Segoe Script', cursive",
+  russo: "'Russo One', Impact, 'Arial Black', sans-serif",
+  montserrat: "'Montserrat', 'Segoe UI', Roboto, sans-serif",
+  oswald: "'Oswald', 'Arial Narrow', sans-serif",
+  rubik: "'Rubik', 'Segoe UI', Roboto, sans-serif",
+  comfortaa: "'Comfortaa', 'Segoe UI', cursive",
+  pacifico: "'Pacifico', 'Comic Sans MS', cursive",
+  alegreya: "'Alegreya', Georgia, serif",
+  raleway: "'Raleway', 'Segoe UI', Roboto, sans-serif"
 };
 
 // Translations
@@ -778,7 +796,7 @@ function App() {
     root.style.setProperty('--card-color', settings.cardColor);
     root.style.setProperty('--accent-color', settings.accentColor);
     root.style.setProperty('--font-size', settings.fontSize + 'px');
-    root.style.setProperty('--font-family', settings.fontFamily === 'minecraft' ? "'Minecraft', 'VT323', monospace" : settings.fontFamily === 'default' ? '-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Oxygen, Ubuntu, sans-serif' : settings.fontFamily);
+    root.style.setProperty('--font-family', FONT_STACKS[settings.fontFamily] || settings.fontFamily || FONT_STACKS.default);
   }, [settings]);
 
   useEffect(() => {
@@ -1861,10 +1879,12 @@ function App() {
             <button className="sidebar-toggle-btn" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
               <span className="toggle-icon">{sidebarCollapsed ? <PrevIcon size={16} /> : <CloseIcon size={16} />}</span>
             </button>
-            <button className="back-btn" onClick={() => { setActiveTab('home'); setSelectedPlaylist(null); setTracks([]); }}>
-              <PrevIcon size={16} />
-              <span>{t('nav_back')}</span>
-            </button>
+            {activeTab !== 'home' && (
+              <button className="back-btn" onClick={() => { setActiveTab('home'); setSelectedPlaylist(null); setTracks([]); }}>
+                <PrevIcon size={16} />
+                <span>{t('nav_back')}</span>
+              </button>
+            )}
           </div>
             <div className="top-nav-center">
               <motion.button
@@ -1964,7 +1984,7 @@ function App() {
                         <div className="track-number">#</div>
                         <div className="track-title-header">{t('main_track_title_header')}</div>
                         <div className="track-album">{t('main_album_header')}</div>
-                        <div className="track-duration">⏱</div>
+                        <div className="track-duration"><TimeIcon size={18} /></div>
                       </div>
                       {artistTracks.map((track, idx) => (
                         <div key={track.id} className={`track-item ${currentTrack?.id === track.id ? 'playing' : ''} ${nextTrack?.id === track.id ? 'next' : ''}`}
@@ -1973,7 +1993,7 @@ function App() {
                           onContextMenu={(e) => handleContextMenu(e, track)}
                         >
                           <div className="track-number">
-                            {currentTrack?.id === track.id && isLoadingTrack ? '⏳' : currentTrack?.id === track.id && isPlaying ? '🔊' : nextTrack?.id === track.id ? '⏭' : idx + 1}
+                            {currentTrack?.id === track.id && isLoadingTrack ? '⏳' : currentTrack?.id === track.id && isPlaying ? <SpeakerIcon size={18} /> : nextTrack?.id === track.id ? '⏭' : idx + 1}
                           </div>
                           <div className="track-info">
                             {track.cover && <img src={track.cover} alt={track.title} className="track-cover" />}
@@ -2121,12 +2141,12 @@ function App() {
                       <div className="track-number">#</div>
                       <div className="track-title-header">{t('main_track_title_header')}</div>
                       <div className="track-album">{t('main_album_header')}</div>
-                      <div className="track-duration">⏱</div>
+                      <div className="track-duration"><TimeIcon size={18} /></div>
                     </div>
 {displayTracks.map((track, idx) => (
                     <div key={track.id} className={`track-item ${currentTrack?.id === track.id ? 'playing' : ''} ${nextTrack?.id === track.id ? 'next' : ''}`} style={{ animationDelay: `${Math.min(idx * 0.04, 1)}s` }} onClick={() => playTrack(track)} onContextMenu={(e) => handleContextMenu(e, track)}>
                         <div className="track-number">
-                          {currentTrack?.id === track.id && isLoadingTrack ? '⏳' : currentTrack?.id === track.id && isPlaying ? '🔊' : nextTrack?.id === track.id ? '⏭' : idx + 1}
+                          {currentTrack?.id === track.id && isLoadingTrack ? '⏳' : currentTrack?.id === track.id && isPlaying ? <SpeakerIcon size={18} /> : nextTrack?.id === track.id ? '⏭' : idx + 1}
                         </div>
                         <div className="track-info">
                           {track.cover && <img src={track.cover} alt={track.title} className="track-cover" />}

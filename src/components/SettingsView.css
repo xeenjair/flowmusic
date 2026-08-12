@@ -748,6 +748,94 @@
 }
 
 /* =========================================
+   Font cards (grid of preview cards)
+   ========================================= */
+.fonts-cards-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fonts-cards-current {
+  font-size: 12px;
+  color: #9aa2b6;
+  font-family: var(--preview-font) !important;
+}
+
+.fonts-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 92, 246, 0.6) rgba(255, 255, 255, 0.06);
+}
+
+.fonts-cards::-webkit-scrollbar {
+  width: 8px;
+}
+
+.fonts-cards::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+}
+
+.fonts-cards::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.6);
+  border-radius: 8px;
+}
+
+.fonts-cards::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.8);
+}
+
+.font-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 10px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.font-card:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.font-card.active {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 0 6px 22px rgba(139, 92, 246, 0.18);
+}
+
+.font-card-preview {
+  font-size: 24px;
+  line-height: 1.1;
+  color: #ffffff;
+  text-align: center;
+  font-family: var(--preview-font) !important;
+}
+
+.font-card-name {
+  font-size: 12px;
+  color: #9aa2b6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-family: var(--preview-font) !important;
+}
+
+/* =========================================
    Premium controls in settings
    ========================================= */
 .premium-control {

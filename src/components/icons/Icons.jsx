@@ -17,6 +17,8 @@ import HistorySvg from '../../assets/icons/history.svg';
 import PlaylistSvg from '../../assets/icons/playlist.svg';
 import MixSvg from '../../assets/icons/mix.svg';
 import RepeatSvg from '../../assets/icons/repeat.svg';
+import SpeakerSvg from '../../assets/icons/speaker.svg';
+import TimeSvg from '../../assets/icons/time.svg';
 
 export const HomeIcon = ({ className, size = 24 }) => (
   <img src={HomeSvg} alt="Home" className={className} width={size} height={size} />
@@ -88,4 +90,12 @@ export const MixIcon = ({ className, size = 24 }) => (
 
 export const RepeatIcon = ({ className, size = 24 }) => (
   <img src={RepeatSvg} alt="Repeat" className={className} width={size} height={size} />
+);
+
+export const SpeakerIcon = ({ className, size = 24 }) => (
+  <img src={SpeakerSvg} alt="Playing" className={className} width={size} height={size} />
+);
+
+export const TimeIcon = ({ className, size = 24 }) => (
+  <img src={TimeSvg} alt="Duration" className={className} width={size} height={size} />
 );

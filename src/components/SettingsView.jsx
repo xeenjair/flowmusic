@@ -2,6 +2,23 @@ import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { CloseIcon } from './icons/Icons';
 import './SettingsView.css';
 
+const FONTS = [
+  { value: 'default', label: 'Default', ru: 'По умолчанию', stack: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
+  { value: 'minecraft', label: 'Minecraft', ru: 'Minecraft', stack: "'Minecraft', 'VT323', monospace" },
+  { value: 'inter', label: 'Inter', ru: 'Inter', stack: "'Inter', -apple-system, 'Segoe UI', sans-serif" },
+  { value: 'jetbrains', label: 'JetBrains Mono', ru: 'JetBrains Mono', stack: "'JetBrains Mono', Consolas, monospace" },
+  { value: 'playfair', label: 'Playfair Display', ru: 'Playfair Display', stack: "'Playfair Display', Georgia, serif" },
+  { value: 'caveat', label: 'Caveat', ru: 'Caveat', stack: "'Caveat', 'Comic Sans MS', cursive" },
+  { value: 'russo', label: 'Russo One', ru: 'Russo One', stack: "'Russo One', Impact, sans-serif" },
+  { value: 'montserrat', label: 'Montserrat', ru: 'Montserrat', stack: "'Montserrat', 'Segoe UI', sans-serif" },
+  { value: 'oswald', label: 'Oswald', ru: 'Oswald', stack: "'Oswald', 'Arial Narrow', sans-serif" },
+  { value: 'rubik', label: 'Rubik', ru: 'Rubik', stack: "'Rubik', 'Segoe UI', sans-serif" },
+  { value: 'comfortaa', label: 'Comfortaa', ru: 'Comfortaa', stack: "'Comfortaa', 'Segoe UI', cursive" },
+  { value: 'pacifico', label: 'Pacifico', ru: 'Pacifico', stack: "'Pacifico', 'Comic Sans MS', cursive" },
+  { value: 'alegreya', label: 'Alegreya', ru: 'Alegreya', stack: "'Alegreya', Georgia, serif" },
+  { value: 'raleway', label: 'Raleway', ru: 'Raleway', stack: "'Raleway', 'Segoe UI', sans-serif" }
+];
+
 const SettingsView = React.memo(function SettingsView({ settings, onSave, onClose, onSelectGif, onClearLyricsCache, subscriptionActive, onOpenSubscription, t }) {
   const [localSettings, setLocalSettings] = useState(settings || {});
   const [activeSection, setActiveSection] = useState('appearance');
@@ -126,22 +143,20 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
   const interfaceCards = useMemo(() => ([
     {
       title: isEnglish ? 'Basic Settings' : 'Основные настройки',
-      subtitle: isEnglish ? 'Language and fonts of the application' : 'Язык и шрифты приложения',
+      subtitle: isEnglish ? 'Language and appearance' : 'Язык и внешний вид',
       items: [
         { key: 'language', label: isEnglish ? 'Interface Language' : 'Язык интерфейса', type: 'choice', choiceValue: 'ru', value: localSettings.language || 'ru', options: [
           { value: 'ru', label: 'Русский' },
           { value: 'en', label: 'English' }
         ] },
-        { key: 'fontSize', label: isEnglish ? 'Font Size' : 'Размер шрифта', type: 'range', value: localSettings.fontSize || 16, min: 12, max: 20, step: 1, format: (v) => `${v}px` },
-        { key: 'fontFamily', label: isEnglish ? 'Font Family' : 'Шрифт', type: 'choice', choiceValue: 'minecraft', value: localSettings.fontFamily || 'minecraft', options: [
-          { value: 'minecraft', label: 'Minecraft' },
-          { value: 'default', label: isEnglish ? 'Default' : 'По умолчанию' },
-          { value: 'sans-serif', label: 'Sans Serif' },
-          { value: 'serif', label: 'Serif' },
-          { value: 'monospace', label: 'Monospace' },
-          { value: 'cursive', label: 'Cursive' },
-          { value: 'fantasy', label: 'Fantasy' }
-        ] }
+        { key: 'fontSize', label: isEnglish ? 'Font Size' : 'Размер шрифта', type: 'range', value: localSettings.fontSize || 16, min: 12, max: 20, step: 1, format: (v) => `${v}px` }
+      ]
+    },
+    {
+      title: isEnglish ? 'Fonts' : 'Шрифты',
+      subtitle: isEnglish ? 'Scroll the menu and pick a font — each row previews its look' : 'Пролистай меню и выбери шрифт — каждая строка показывает его пример',
+      items: [
+        { key: 'fontFamily', label: '', type: 'fonts', value: localSettings.fontFamily || 'minecraft' }
       ]
     },
     {
@@ -341,6 +356,33 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
             value={item.value}
             onChange={(e) => handleChange(item.key, item.step < 1 ? parseFloat(e.target.value) : parseInt(e.target.value, 10))}
           />
+        </div>
+      );
+    }
+
+    if (item.type === 'fonts') {
+      const activeFont = FONTS.find(f => f.value === (localSettings.fontFamily || 'minecraft')) || FONTS[0];
+      return (
+        <div key={item.key} className="fonts-cards-wrap">
+          <span className="fonts-cards-current" style={{ '--preview-font': activeFont.stack }}>
+            {isEnglish ? 'Current' : 'Текущий'}: {isEnglish ? activeFont.label : (activeFont.ru || activeFont.label)}
+          </span>
+          <div className="fonts-cards">
+            {FONTS.map(font => (
+              <button
+                key={font.value}
+                type="button"
+                className={`font-card ${localSettings.fontFamily === font.value ? 'active' : ''}`}
+                style={{ '--preview-font': font.stack }}
+                onClick={() => handleChange('fontFamily', font.value)}
+              >
+                <span className="font-card-preview">Аа Бб 123</span>
+                <span className="font-card-name">
+                  {isEnglish ? font.label : (font.ru || font.label)}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       );
     }
