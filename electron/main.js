@@ -309,6 +309,7 @@ function setupIpcHandlers() {
   ipcMain.handle('yandex:get-playlists', async (e, token) => yandexApi.getUserPlaylists(token));
   ipcMain.handle('yandex:get-playlist-tracks', async (e, token, id, type, uid) => yandexApi.getPlaylistTracks(token, id, type, uid));
   ipcMain.handle('yandex:get-recommendations', async (e, token) => yandexApi.getRecommendations(token));
+  ipcMain.handle('yandex:get-recommendation-mixes', async (e, token) => yandexApi.getRecommendationMixes(token));
   ipcMain.handle('yandex:search', async (e, token, query) => yandexApi.search(token, query));
   ipcMain.handle('yandex:search-artists', async (e, token, query) => yandexApi.searchArtists(token, query));
   ipcMain.handle('yandex:artist-details', async (e, token, artistId) => yandexApi.getArtistDetails(token, artistId));

@@ -1282,6 +1282,13 @@ body {
   color: #666;
 }
 
+.recommendations-soon {
+  color: #888;
+  font-size: 15px;
+  text-align: center;
+  padding: 24px 0;
+}
+
 .featured-info {
   text-align: center;
 }
@@ -3170,33 +3177,6 @@ input, button, textarea, select {
   color: #fff;
 }
 
-/* Role Badges */
-.role-badge {
-  display: inline-block !important;
-  padding: 4px 10px !important;
-  border-radius: 12px !important;
-  color: white !important;
-  font-size: 12px !important;
-  font-weight: bold !important;
-  margin-left: 10px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-  border: 2px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
-}
-
-.role-badge-small {
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 12px;
-}
-
-.role-badge-large {
-  font-size: 13px;
-  padding: 4px 10px;
-  border-radius: 14px;
-}
-
 /* Убираем сглаживание для ВСЕГО текста, чтобы был пиксельный эффект */
 * {
   font-smooth: never !important;
@@ -3652,4 +3632,289 @@ input, button, textarea, select {
   background: var(--primary-color, #b3b3b3) !important;
   border: 2px solid #0a0a0a !important;
   box-shadow: none !important;
+}
+
+/* ============ Nickname deep customization ============ */
+
+@keyframes nickname-flow-left {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes nickname-flow-right {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+@keyframes nickname-flow-top {
+  0% { background-position: 50% 100%; }
+  100% { background-position: 50% 0%; }
+}
+@keyframes nickname-flow-bottom {
+  0% { background-position: 50% 0%; }
+  100% { background-position: 50% 100%; }
+}
+@keyframes nickname-flow-diagonal {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 100% 100%; }
+}
+
+.nickname-animated {
+  background-size: 200% 200%;
+  animation: nickname-flow-left 4s linear infinite;
+}
+.nickname-animated-right { animation-name: nickname-flow-right; }
+.nickname-animated-top { animation-name: nickname-flow-top; }
+.nickname-animated-bottom { animation-name: nickname-flow-bottom; }
+.nickname-animated-diagonal { animation-name: nickname-flow-diagonal; }
+
+/* Compact customizer */
+.nickname-customizer h4 {
+  margin: 0 0 8px 0 !important;
+}
+
+.nickname-preview-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.nickname-preview-name {
+  font-size: 17px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.nickname-theme-label {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 6px 0 5px 0;
+}
+.nickname-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.nickname-swatches + .nickname-swatches {
+  margin-top: 5px;
+}
+.nickname-swatch {
+  width: 21px;
+  height: 21px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.nickname-swatch:hover {
+  transform: scale(1.15);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.nickname-swatch-active {
+  border-color: #fff !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+  transform: scale(1.1);
+}
+.nickname-swatch-gradient {
+  background-size: cover;
+}
+
+/* Two-column control rows */
+.nickname-row {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+}
+.nickname-control-label {
+  color: #b3b3b3;
+  font-size: 11px;
+}
+.nickname-row-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.nickname-direction-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.nickname-dir-btn {
+  padding: 3px 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.nickname-dir-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.nickname-dir-btn.active {
+  background: var(--primary-color, #b3b3b3);
+  border-color: var(--primary-color, #b3b3b3);
+  color: #000;
+  font-weight: 600;
+}
+
+/* Toggle */
+.nickname-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  width: max-content;
+}
+.nickname-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.nickname-toggle-track {
+  width: 38px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s ease;
+}
+.nickname-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+.nickname-toggle input:checked + .nickname-toggle-track {
+  background: var(--primary-color, #b3b3b3);
+}
+.nickname-toggle input:checked + .nickname-toggle-track .nickname-toggle-thumb {
+  transform: translateX(18px);
+  background: #000;
+}
+
+/* Select / range / color */
+.nickname-select {
+  width: 100%;
+  padding: 4px 7px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+}
+.nickname-select:focus {
+  outline: none;
+  border-color: var(--primary-color, #b3b3b3);
+}
+.nickname-select option {
+  background: #1a1a1a;
+  color: #fff;
+}
+.nickname-select-inline {
+  width: auto;
+  min-width: 120px;
+  flex: 1 1 110px;
+}
+.nickname-range {
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  outline: none;
+  flex: 1 1 80px;
+  min-width: 70px;
+}
+.nickname-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary-color, #b3b3b3);
+  cursor: pointer;
+}
+.nickname-range-inline {
+  flex: 0 1 70px;
+  min-width: 60px;
+}
+.nickname-range-val {
+  font-size: 11px;
+  color: #b3b3b3;
+  min-width: 32px;
+  text-align: right;
+}
+.nickname-color-input {
+  width: 28px;
+  height: 22px;
+  border: none;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px;
+  cursor: pointer;
+}
+.nickname-color-label {
+  font-size: 11px;
+  color: #b3b3b3;
+}
+
+/* Effect buttons */
+.nickname-effect-btns {
+  display: flex;
+  gap: 4px;
+}
+.nickname-effect-btn {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.nickname-effect-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.nickname-effect-btn.active {
+  background: var(--primary-color, #b3b3b3);
+  border-color: var(--primary-color, #b3b3b3);
+  color: #000;
+  font-weight: 700;
+}
+.nickname-effect-italic {
+  font-style: italic;
+}
+
+/* Gradient text needs real font smoothing, otherwise background-clip: text
+   renders as a solid block in Chromium (global * { font-smoothing: none }) */
+.user-name > span,
+.profile-header-text h2,
+.nickname-preview-name,
+.nickname-animated {
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: auto !important;
+  font-smooth: auto !important;
 }

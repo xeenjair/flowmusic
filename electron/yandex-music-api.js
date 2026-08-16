@@ -546,6 +546,78 @@ class YandexMusicAPI {
     }
   }
 
+  // Персональные подборки из /feed: «Дежавю», «Плейлист дня», «Премьера», микс дня и т.д.
+  async getRecommendationMixes(token) {
+    try {
+      const feedResponse = await this.client.get('/feed', {
+        headers: {
+          'Authorization': `OAuth ${token}`,
+          'X-Yandex-Music-Client': 'YandexMusicAndroid/24023621',
+          'Accept-Language': 'ru'
+        }
+      });
+
+      const feed = feedResponse.data.result;
+      const rawMixes = [];
+      const seen = new Set();
+
+      const pushMix = (entry) => {
+        const data = entry.data || entry;
+        const kind = data.kind ?? entry.kind;
+        if (kind == null) return;
+        if (seen.has(String(kind))) return;
+        seen.add(String(kind));
+        rawMixes.push(data);
+      };
+
+      (feed.generatedPlaylists || []).forEach(pushMix);
+      (feed.days || []).slice(0, 2).forEach(day => (day.playlists || []).forEach(pushMix));
+
+      if (rawMixes.length === 0) return [];
+
+      const mixes = [];
+      for (const mix of rawMixes.slice(0, 16)) {
+        const trackIds = (mix.tracks || [])
+          .map(t => t && (typeof t === 'string' ? t : t.id))
+          .filter(Boolean)
+          .slice(0, 60);
+        if (trackIds.length === 0) continue;
+
+        let full = [];
+        try {
+          const tracksResponse = await this.client.post('/tracks', trackIds, {
+            headers: {
+              'Authorization': `OAuth ${token}`,
+              'X-Yandex-Music-Client': 'YandexMusicAndroid/24023621'
+            }
+          });
+          full = tracksResponse.data.result || [];
+        } catch (e) {
+          console.error(`Mix "${mix.title}" tracks error:`, e.message);
+        }
+
+        const formatted = full.map(t => this.formatTrackShort(t)).filter(Boolean);
+        if (formatted.length === 0) continue;
+
+        mixes.push({
+          id: mix.kind ?? mix.id,
+          uid: mix.uid,
+          title: mix.title || 'Микс',
+          description: mix.description || '',
+          trackCount: formatted.length,
+          cover: (formatted.find(t => t.cover) || {}).cover || null,
+          type: 'yandex',
+          tracks: formatted
+        });
+      }
+
+      return mixes.slice(0, 12);
+    } catch (error) {
+      console.error('Recommendation mixes error:', error.message);
+      return [];
+    }
+  }
+
   async getArtistDetails(token, artistId) {
     try {
       const response = await this.client.get(`/artists/${artistId}`, {

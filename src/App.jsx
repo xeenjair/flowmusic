@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Titlebar from './components/Titlebar';
 import LyricsView from './components/LyricsView';
@@ -21,51 +21,160 @@ import './App.css';
 
 
 
-// Role Badge Component
-const RoleBadge = ({ role, size = 'small' }) => {
-  console.log('Rendering RoleBadge:', role, size);
-  const colors = {
-    admin: '#ff4757',
-    sapphire: '#3742fa',
-    max: '#ffa502',
-    pro: '#8b5cf6',
-    user: '#7bed9f'
-  };
+// ============ Nickname customization ============
 
-  const labels = {
-    admin: 'Admin',
-    sapphire: 'Sapphire',
-    max: 'Max',
-    pro: 'Pro',
-    user: 'User'
-  };
+// Solid colors for nickname
+const SOLID_COLORS = [
+  { id: 'default', ru: 'По умолчанию', en: 'Default', color: '#ffffff' },
+  { id: 'red', ru: 'Красный', en: 'Red', color: '#ff4757' },
+  { id: 'blue', ru: 'Синий', en: 'Blue', color: '#3742fa' },
+  { id: 'green', ru: 'Зеленый', en: 'Green', color: '#2ed573' },
+  { id: 'purple', ru: 'Фиолетовый', en: 'Purple', color: '#8b5cf6' },
+  { id: 'gold', ru: 'Золотой', en: 'Gold', color: '#ffa502' },
+  { id: 'pink', ru: 'Розовый', en: 'Pink', color: '#ff6b81' },
+  { id: 'cyan', ru: 'Бирюзовый', en: 'Cyan', color: '#00cec9' },
+  { id: 'orange', ru: 'Оранжевый', en: 'Orange', color: '#ff9f43' },
+  { id: 'gray', ru: 'Серый', en: 'Gray', color: '#a0a0a0' }
+];
 
-  if (role === 'user') return null; // Don't show user badge
+// Gradient presets for nickname
+const GRADIENT_PRESETS = [
+  { id: 'rainbow', ru: 'Радуга', en: 'Rainbow', colors: ['#ff4757', '#3742fa', '#2ed573', '#ffa502'] },
+  { id: 'sunset', ru: 'Закат', en: 'Sunset', colors: ['#ff6b35', '#f7931e', '#ffa502'] },
+  { id: 'ocean', ru: 'Океан', en: 'Ocean', colors: ['#0984e3', '#3742fa', '#8b5cf6'] },
+  { id: 'fire', ru: 'Огонь', en: 'Fire', colors: ['#f12711', '#f5af19', '#ffd700'] },
+  { id: 'ice', ru: 'Лёд', en: 'Ice', colors: ['#00c6ff', '#0072ff', '#00e5ff'] },
+  { id: 'candy', ru: 'Конфетка', en: 'Candy', colors: ['#ff6b9d', '#c4459c', '#ff6b9d'] },
+  { id: 'forest', ru: 'Лес', en: 'Forest', colors: ['#00b894', '#00cec9', '#55efc4'] },
+  { id: 'royal', ru: 'Королевский', en: 'Royal', colors: ['#6c5ce7', '#a29bfe', '#fd79a8'] },
+  { id: 'galaxy', ru: 'Галактика', en: 'Galaxy', colors: ['#8e2de2', '#4a00e0', '#6c5ce7'] },
+  { id: 'neon', ru: 'Неон', en: 'Neon', colors: ['#ff00ff', '#00ffff', '#ff00ff'] },
+  { id: 'blood', ru: 'Кровь', en: 'Blood', colors: ['#cb356b', '#bd3f32', '#ff4d4d'] },
+  { id: 'lime', ru: 'Лайм', en: 'Lime', colors: ['#a8ff78', '#78ffd6', '#a8ff78'] },
+  { id: 'aurora', ru: 'Аврора', en: 'Aurora', colors: ['#00f5a0', '#00d9f5', '#7f00ff'] },
+  { id: 'rosegold', ru: 'Розовое золото', en: 'Rose gold', colors: ['#f6d365', '#fda085', '#ff7eb3'] },
+  { id: 'cyber', ru: 'Кибер', en: 'Cyber', colors: ['#00f5a0', '#00d9f5', '#00f5a0'] },
+  { id: 'peachy', ru: 'Персик', en: 'Peach', colors: ['#ff9a9e', '#fad0c4', '#ff9a9e'] },
+  { id: 'violet', ru: 'Фиолетовая вспышка', en: 'Violet flash', colors: ['#7f00ff', '#e100ff', '#7f00ff'] }
+];
 
-  return (
-    <span
-      className={`role-badge role-badge-${size}`}
-      style={{ backgroundColor: colors[role] }}
-    >
-      {labels[role]}
-    </span>
-  );
+const isSolidColor = (id) => SOLID_COLORS.some(c => c.id === id);
+
+const nicknameLabel = (lang, arr, id) => {
+  const item = arr.find(i => i.id === id);
+  if (!item) return id;
+  return (lang === 'en' ? item.en : item.ru);
 };
 
-// User Color Style Function
-const getUserColorStyle = (color) => {
-  const styles = {
-    default: { color: '#fff' },
-    red: { color: '#ff4757' },
-    blue: { color: '#3742fa' },
-    green: { color: '#2ed573' },
-    purple: { color: '#8b5cf6' },
-    gold: { color: '#ffa502' },
-    rainbow: { background: 'linear-gradient(45deg, #ff4757, #3742fa, #2ed573, #ffa502)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' },
-    sunset: { background: 'linear-gradient(45deg, #ff6b35, #f7931e, #ffa502)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' },
-    ocean: { background: 'linear-gradient(45deg, #0984e3, #3742fa, #8b5cf6)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }
-  };
-  return styles[color] || styles.default;
+const nicknameGradientStyle = (gradId, direction, colorsOverride) => {
+  const grad = GRADIENT_PRESETS.find(g => g.id === gradId);
+  const colors = colorsOverride || (grad ? grad.colors : ['#ff4757', '#3742fa']);
+  return `linear-gradient(${direction}, ${colors.join(', ')})`;
+};
+
+// Gradient direction options
+const NICKNAME_DIRECTIONS = [
+  { id: '45deg', ru: 'Вниз-вправо ↘', en: 'Down-right ↘' },
+  { id: '135deg', ru: 'Вниз-влево ↙', en: 'Down-left ↙' },
+  { id: 'to right', ru: 'Вправо →', en: 'To right →' },
+  { id: 'to left', ru: 'Влево ←', en: 'To left ←' },
+  { id: 'to bottom', ru: 'Вниз ↓', en: 'To bottom ↓' },
+  { id: 'to top', ru: 'Вверх ↑', en: 'To top ↑' }
+];
+
+// Animation (flow) directions
+const NICKNAME_ANIM_DIRECTIONS = [
+  { id: 'left', ru: 'Слева направо', en: 'Left to right' },
+  { id: 'right', ru: 'Справа налево', en: 'Right to left' },
+  { id: 'top', ru: 'Сверху вниз', en: 'Top to bottom' },
+  { id: 'bottom', ru: 'Снизу вверх', en: 'Bottom to top' },
+  { id: 'diagonal', ru: 'По диагонали', en: 'Diagonal' }
+];
+
+// Font options for nickname
+const NICKNAME_FONTS = [
+  { id: 'default', ru: 'По умолчанию', en: 'Default' },
+  { id: 'minecraft', ru: 'Minecraft', en: 'Minecraft' },
+  { id: 'inter', ru: 'Inter', en: 'Inter' },
+  { id: 'jetbrains', ru: 'JetBrains Mono', en: 'JetBrains Mono' },
+  { id: 'playfair', ru: 'Playfair Display', en: 'Playfair Display' },
+  { id: 'caveat', ru: 'Caveat', en: 'Caveat' },
+  { id: 'russo', ru: 'Russo One', en: 'Russo One' },
+  { id: 'montserrat', ru: 'Montserrat', en: 'Montserrat' },
+  { id: 'oswald', ru: 'Oswald', en: 'Oswald' },
+  { id: 'rubik', ru: 'Rubik', en: 'Rubik' },
+  { id: 'comfortaa', ru: 'Comfortaa', en: 'Comfortaa' },
+  { id: 'pacifico', ru: 'Pacifico', en: 'Pacifico' },
+  { id: 'alegreya', ru: 'Alegreya', en: 'Alegreya' },
+  { id: 'raleway', ru: 'Raleway', en: 'Raleway' }
+];
+
+// Periodic gradient with two identical cycles (half the image each).
+// With background-size 200% a single cycle == element width, so a
+// 0% -> 100% background-position loop wraps seamlessly (no ping-pong).
+const periodicGradient = (direction, colors) => {
+  const n = colors.length;
+  const stops = [];
+  for (let i = 0; i < n; i++) stops.push(`${colors[i]} ${(i * 50 / n).toFixed(2)}%`);
+  for (let i = 0; i < n; i++) stops.push(`${colors[i]} ${(50 + i * 50 / n).toFixed(2)}%`);
+  stops.push(`${colors[0]} 100%`);
+  return `linear-gradient(${direction}, ${stops.join(', ')})`;
+};
+
+// Build full nickname style
+const getNicknameStyle = (settings) => {
+  const s = settings || {};
+  const themeId = s.userColor || 'default';
+  const direction = s.nicknameGradientDirection || '45deg';
+  const style = {};
+
+  if (isSolidColor(themeId)) {
+    const solid = SOLID_COLORS.find(c => c.id === themeId) || SOLID_COLORS[0];
+    style.color = solid.color;
+  } else {
+    if (themeId === 'custom') {
+      const c1 = s.nicknameGradientColor1 || '#ff6b35';
+      const c2 = s.nicknameGradientColor2 || '#3742fa';
+      style.backgroundImage = s.nicknameAnimate
+        ? periodicGradient(direction, [c1, c2])
+        : `linear-gradient(${direction}, ${c1}, ${c2})`;
+    } else {
+      const grad = GRADIENT_PRESETS.find(g => g.id === themeId) || GRADIENT_PRESETS[0];
+      style.backgroundImage = s.nicknameAnimate
+        ? periodicGradient(direction, grad.colors)
+        : nicknameGradientStyle(themeId, direction);
+    }
+    style.WebkitBackgroundClip = 'text';
+    style.backgroundClip = 'text';
+    style.WebkitTextFillColor = 'transparent';
+    style.color = 'transparent';
+    if (s.nicknameAnimate) {
+      style.backgroundSize = '200% 200%';
+      style.animationName = `nickname-flow-${s.nicknameAnimateDirection || 'left'}`;
+      style.animationDuration = `${Math.max(1, Number(s.nicknameAnimateSpeed) || 4)}s`;
+      style.animationTimingFunction = 'linear';
+      style.animationIterationCount = 'infinite';
+    }
+  }
+
+  if (s.nicknameBold) style.fontWeight = 700;
+  if (s.nicknameItalic) style.fontStyle = 'italic';
+  if (s.nicknameFont && s.nicknameFont !== 'default' && FONT_STACKS[s.nicknameFont]) {
+    style.fontFamily = FONT_STACKS[s.nicknameFont];
+  }
+  if (s.nicknameGlow) {
+    const blur = Math.max(2, Number(s.nicknameGlowBlur) || 8);
+    style.textShadow = `0 0 ${blur}px ${s.nicknameGlowColor || '#ffffff'}`;
+  }
+  if (s.nicknameUppercase) style.textTransform = 'uppercase';
+  if (s.nicknameLetterSpacing) style.letterSpacing = `${Number(s.nicknameLetterSpacing) || 0}px`;
+
+  let className = '';
+  if (!isSolidColor(themeId) && s.nicknameAnimate) {
+    className = `nickname-animated nickname-animated-${s.nicknameAnimateDirection || 'left'}`;
+  }
+
+  return { style, className };
 };
 
 const avatarSrc = (filePath, fallback = '') => {
@@ -91,7 +200,7 @@ const FONT_STACKS = {
   raleway: "'Raleway', 'Segoe UI', Roboto, sans-serif"
 };
 
-// Translations
+// ============ Translations ============
 const translations = {
   ru: {
     // Auth
@@ -146,6 +255,7 @@ const translations = {
     'main_favorite_hint': 'Нажмите ☆ на плейлисте',
     'main_loading_recommendations': 'Загружаем рекомендации',
     'main_recommendations_soon': 'Персональные плейлисты скоро появятся',
+    'main_recommendations': 'Рекомендации',
     'main_track_count': 'треков',
     'main_artist_results': 'Исполнители',
     'main_playlist_results': 'Рекомендуемые плейлисты',
@@ -179,7 +289,7 @@ const translations = {
     'profile_change_photo': 'Изменить фото',
     'profile_enter_nickname': 'Введите никнейм',
     'profile_nickname_unique': 'Никнейм должен быть уникальным',
-    'profile_color': 'Цвет ника',
+    'profile_color': 'Оформление ника',
     'profile_color_default': 'По умолчанию',
     'profile_color_red': 'Красный',
     'profile_color_blue': 'Синий',
@@ -189,6 +299,26 @@ const translations = {
     'profile_color_rainbow': 'Радуга',
     'profile_color_sunset': 'Закат',
     'profile_color_ocean': 'Океан',
+    'profile_nickname_preview': 'Предпросмотр',
+    'profile_nickname_theme': 'Цвет / градиент',
+    'profile_nickname_solid': 'Цвет',
+    'profile_nickname_gradient': 'Градиент',
+    'profile_nickname_direction': 'Направление градиента',
+    'profile_nickname_animation': 'Переливание градиента',
+    'profile_nickname_anim_direction': 'Направление переливания',
+    'profile_nickname_anim_speed': 'Скорость',
+    'profile_nickname_font': 'Шрифт',
+    'profile_nickname_effects': 'Эффекты',
+    'profile_nickname_bold': 'Жирный',
+    'profile_nickname_italic': 'Курсив',
+    'profile_nickname_uppercase': 'Заглавные',
+    'profile_nickname_glow': 'Свечение',
+    'profile_nickname_glow_color': 'Цвет свечения',
+    'profile_nickname_glow_blur': 'Интенсивность свечения',
+    'profile_nickname_spacing': 'Межбуквенный интервал',
+    'profile_nickname_custom': 'Свой градиент',
+    'profile_nickname_color1': 'Цвет 1',
+    'profile_nickname_color2': 'Цвет 2',
     'profile_logout': 'Выйти из аккаунта',
 
     // Toast
@@ -264,6 +394,7 @@ const translations = {
     'main_favorite_hint': 'Click ☆ on a playlist',
     'main_loading_recommendations': 'Loading recommendations',
     'main_recommendations_soon': 'Personal playlists coming soon',
+    'main_recommendations': 'Recommendations',
     'main_track_count': 'tracks',
     'main_artist_results': 'Artists',
     'main_playlist_results': 'Recommended Playlists',
@@ -297,7 +428,7 @@ const translations = {
     'profile_change_photo': 'Change photo',
     'profile_enter_nickname': 'Enter nickname',
     'profile_nickname_unique': 'Nickname must be unique',
-    'profile_color': 'Nickname color',
+    'profile_color': 'Nickname style',
     'profile_color_default': 'Default',
     'profile_color_red': 'Red',
     'profile_color_blue': 'Blue',
@@ -307,6 +438,26 @@ const translations = {
     'profile_color_rainbow': 'Rainbow',
     'profile_color_sunset': 'Sunset',
     'profile_color_ocean': 'Ocean',
+    'profile_nickname_preview': 'Preview',
+    'profile_nickname_theme': 'Color / gradient',
+    'profile_nickname_solid': 'Solid',
+    'profile_nickname_gradient': 'Gradient',
+    'profile_nickname_direction': 'Gradient direction',
+    'profile_nickname_animation': 'Gradient flow',
+    'profile_nickname_anim_direction': 'Flow direction',
+    'profile_nickname_anim_speed': 'Speed',
+    'profile_nickname_font': 'Font',
+    'profile_nickname_effects': 'Effects',
+    'profile_nickname_bold': 'Bold',
+    'profile_nickname_italic': 'Italic',
+    'profile_nickname_uppercase': 'UPPERCASE',
+    'profile_nickname_glow': 'Glow',
+    'profile_nickname_glow_color': 'Glow color',
+    'profile_nickname_glow_blur': 'Glow intensity',
+    'profile_nickname_spacing': 'Letter spacing',
+    'profile_nickname_custom': 'Custom gradient',
+    'profile_nickname_color1': 'Color 1',
+    'profile_nickname_color2': 'Color 2',
     'profile_logout': 'Logout',
 
     // Toast
@@ -385,8 +536,22 @@ function App() {
     isFullscreen: false,
     particlesType: 'none',
     enableDiscordRPC: false,
-    userRole: 'admin',
     customNickname: '',
+    userColor: 'default',
+    nicknameGradientDirection: '45deg',
+    nicknameAnimate: false,
+    nicknameAnimateDirection: 'left',
+    nicknameAnimateSpeed: 4,
+    nicknameBold: false,
+    nicknameItalic: false,
+    nicknameFont: 'default',
+    nicknameGlow: false,
+    nicknameGlowColor: '#ffffff',
+    nicknameGlowBlur: 8,
+    nicknameUppercase: false,
+    nicknameLetterSpacing: 0,
+    nicknameGradientColor1: '#ff6b35',
+    nicknameGradientColor2: '#3742fa',
     theme: 'dark',
     avatar: ''
   });
@@ -407,12 +572,14 @@ function App() {
     }
   });
   const [favoritePlaylists, setFavoritePlaylists] = useState([]);
-  const [recommendations, setRecommendations] = useState([]);
+  const [recommendationMixes, setRecommendationMixes] = useState([]);
   const [localTracks, setLocalTracks] = useState([]);
   const [isShuffled, setIsShuffled] = useState(false);
   const [repeatMode, setRepeatMode] = useState('none'); // 'none', 'all', 'one'
   const [toast, setToast] = useState(null);
-  
+
+  const nicknameStyle = useMemo(() => getNicknameStyle(settings), [settings]);
+
   const audioRef1 = useRef(null);
   const audioRef2 = useRef(null);
   const audioContextRef = useRef(null);
@@ -800,14 +967,13 @@ function App() {
   }, [settings]);
 
   useEffect(() => {
-    console.log('Current userRole:', settings.userRole);
     const app = document.querySelector('.app');
     if (settings.enableLiquidGlass) {
       app?.classList.add('liquid-glass');
     } else {
       app?.classList.remove('liquid-glass');
     }
-  }, [settings.enableLiquidGlass, settings.userRole]);
+  }, [settings.enableLiquidGlass]);
 
   useEffect(() => {
     // Remove all theme classes first
@@ -980,12 +1146,12 @@ function App() {
     if (!tokenToUse) return;
     try {
       console.log('Loading recommendations with token:', tokenToUse.substring(0, 10) + '...');
-      const recs = await window.electron.yandex.getRecommendations(tokenToUse);
-      console.log('Loaded recommendations:', recs);
-      setRecommendations(recs || []);
+      const mixes = await window.electron.yandex.getRecommendationMixes(tokenToUse);
+      console.log('Loaded recommendation mixes:', mixes);
+      setRecommendationMixes(mixes || []);
     } catch (err) {
       console.error('Recommendations error:', err);
-      setRecommendations([]);
+      setRecommendationMixes([]);
     }
   };
 
@@ -1041,6 +1207,13 @@ function App() {
       const tracksData = await window.electron.yandex.getPlaylistTracks(token, playlistId, type, ownerUid);
       setTracks(tracksData || []);
     } catch (err) { setError(err.message); } finally { setLoading(false); }
+  };
+
+  const loadMixTracks = (mix) => {
+    setSelectedPlaylist({ id: String(mix.id), name: mix.title, type: 'yandex' });
+    setTracks(mix.tracks || []);
+    setError(null);
+    setActiveTab('home');
   };
 
   const loadLocalPlaylist = (playlist) => {
@@ -1839,10 +2012,9 @@ function App() {
                 <div className="user-avatar">👤</div>
               )}
               <div className="user-name">
-                <span style={getUserColorStyle(settings.userColor)}>
+                <span style={nicknameStyle.style} className={nicknameStyle.className}>
                   {settings.customNickname || user?.login || 'Пользователь'}
                 </span>
-                <RoleBadge role={settings.userRole} size="small" />
               </div>
             </div>
             <div className="settings-btn" onClick={() => setShowSettings(true)}>
@@ -2081,46 +2253,28 @@ function App() {
           
           {activeTab === 'home' && !selectedPlaylist && !loading && !error && (
             <div className="featured-playlists">
-              <h2 className="featured-title">{t('main_playlist_results')}</h2>
-              <div className="featured-grid">
-                {playlists.filter(pl => {
-                  const title = pl.title.toLowerCase();
-                  return (
-                    // Yandex Music special playlists
-                    title.includes('премьера') ||
-                    title.includes('дежавю') ||
-                    title.includes('премьер') ||
-                    title.includes('дежа') ||
-                    title.includes('популярн') ||
-                    title.includes('рок') ||
-                    title.includes('хит-парад') ||
-                    title.includes('мир музыки') ||
-                    title.includes('новинки') ||
-                    title.includes('топ') ||
-                    title.includes('новинки') ||
-                    // Fallback: first 6 playlists if none match the filters
-                    // This ensures something shows up on home screen
-                    false
-                  );
-                })
-                // Show up to 8 featured playlists or all matching ones
-                .slice(0, 8)
-                .map(pl => (
-                  <div key={pl.id} className="featured-playlist-card" onClick={() => loadPlaylistTracks(pl.id, pl.title, pl.type, pl.ownerUid)}>
-                    {pl.cover ? (
-                      <img src={pl.cover} alt={pl.title} className="featured-cover" />
-                    ) : (
-                      <div className="featured-cover-placeholder">
-                        <span>🎵</span>
+              <h2 className="featured-title">{t('main_recommendations')}</h2>
+              {recommendationMixes.length > 0 ? (
+                <div className="featured-grid">
+                  {recommendationMixes.map(mix => (
+                    <div key={String(mix.id)} className="featured-playlist-card" onClick={() => loadMixTracks(mix)}>
+                      {mix.cover ? (
+                        <img src={mix.cover} alt={mix.title} className="featured-cover" />
+                      ) : (
+                        <div className="featured-cover-placeholder">
+                          <span>🎵</span>
+                        </div>
+                      )}
+                      <div className="featured-info">
+                        <div className="featured-name">{mix.title}</div>
+                        <div className="featured-meta">{mix.trackCount} {t('main_track_count')}</div>
                       </div>
-                    )}
-                    <div className="featured-info">
-                      <div className="featured-name">{pl.title}</div>
-                      <div className="featured-meta">{pl.trackCount} {t('main_track_count')}</div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="recommendations-soon">{t('main_recommendations_soon')}</p>
+              )}
             </div>
           )}
 
@@ -2267,9 +2421,8 @@ function App() {
                   <span className="profile-avatar-edit">📷</span>
                 </button>
                 <div className="profile-header-text">
-                  <h2 style={getUserColorStyle(settings.userColor)}>
+                  <h2 style={nicknameStyle.style} className={nicknameStyle.className}>
                     {settings.customNickname || user?.login || t('user_default')}
-                    <RoleBadge role={settings.userRole} size="large" />
                   </h2>
                   <p>{user?.email || t('user_default')}</p>
                 </div>
@@ -2362,25 +2515,198 @@ function App() {
                     )}
                   </div>
 
-                  <div className="profile-color profile-card-block">
-                    <h4>{t ? t('profile_color') : 'Цвет ника'}</h4>
-                    <select
-                      value={settings.userColor || 'default'}
-                      onChange={(e) => {
-                        saveSettings({ ...settings, userColor: e.target.value });
-                      }}
-                      className="profile-color-select"
-                    >
-                      <option value="default">{t ? t('profile_color_default') : 'По умолчанию'}</option>
-                      <option value="red">{t ? t('profile_color_red') : 'Красный'}</option>
-                      <option value="blue">{t ? t('profile_color_blue') : 'Синий'}</option>
-                      <option value="green">{t ? t('profile_color_green') : 'Зеленый'}</option>
-                      <option value="purple">{t ? t('profile_color_purple') : 'Фиолетовый'}</option>
-                      <option value="gold">{t ? t('profile_color_gold') : 'Золотой'}</option>
-                      <option value="rainbow">{t ? t('profile_color_rainbow') : 'Радуга'}</option>
-                      <option value="sunset">{t ? t('profile_color_sunset') : 'Закат'}</option>
-                      <option value="ocean">{t ? t('profile_color_ocean') : 'Океан'}</option>
-                    </select>
+<div className="profile-color profile-card-block nickname-customizer">
+                    <h4>{t('profile_color')}</h4>
+
+                    <div className="nickname-preview-box">
+                      <span className={`nickname-preview-name ${nicknameStyle.className}`} style={nicknameStyle.style}>
+                        {settings.customNickname || user?.login || t('user_default')}
+                      </span>
+                    </div>
+
+                    <div className="nickname-theme-label">{t('profile_nickname_theme')}</div>
+                    <div className="nickname-swatches">
+                      {SOLID_COLORS.map(c => (
+                        <button
+                          key={c.id}
+                          className={`nickname-swatch ${isSolidColor(settings.userColor) && settings.userColor === c.id ? 'nickname-swatch-active' : ''}`}
+                          style={{ backgroundColor: c.color }}
+                          title={nicknameLabel(settings.language, SOLID_COLORS, c.id)}
+                          onClick={() => saveSettings({ ...settings, userColor: c.id })}
+                        />
+                      ))}
+                    </div>
+                    <div className="nickname-swatches">
+                      <button
+                        className={`nickname-swatch nickname-swatch-gradient ${!isSolidColor(settings.userColor) && settings.userColor === 'custom' ? 'nickname-swatch-active' : ''}`}
+                        style={{ background: `linear-gradient(45deg, ${settings.nicknameGradientColor1 || '#ff6b35'}, ${settings.nicknameGradientColor2 || '#3742fa'})` }}
+                        title={t('profile_nickname_custom')}
+                        onClick={() => saveSettings({ ...settings, userColor: 'custom' })}
+                      />
+                      {GRADIENT_PRESETS.map(g => (
+                        <button
+                          key={g.id}
+                          className={`nickname-swatch nickname-swatch-gradient ${!isSolidColor(settings.userColor) && settings.userColor === g.id ? 'nickname-swatch-active' : ''}`}
+                          style={{ background: nicknameGradientStyle(g.id, settings.nicknameGradientDirection || '45deg') }}
+                          title={nicknameLabel(settings.language, GRADIENT_PRESETS, g.id)}
+                          onClick={() => saveSettings({ ...settings, userColor: g.id })}
+                        />
+                      ))}
+                    </div>
+
+                    {!isSolidColor(settings.userColor) && (
+                      <>
+                        {settings.userColor === 'custom' && (
+                          <div className="nickname-row">
+                            <span className="nickname-control-label">{t('profile_nickname_custom')}</span>
+                            <div className="nickname-row-content">
+                              <span className="nickname-color-label">{t('profile_nickname_color1')}</span>
+                              <input
+                                type="color"
+                                value={settings.nicknameGradientColor1 || '#ff6b35'}
+                                onChange={(e) => saveSettings({ ...settings, nicknameGradientColor1: e.target.value })}
+                                className="nickname-color-input"
+                              />
+                              <span className="nickname-color-label">{t('profile_nickname_color2')}</span>
+                              <input
+                                type="color"
+                                value={settings.nicknameGradientColor2 || '#3742fa'}
+                                onChange={(e) => saveSettings({ ...settings, nicknameGradientColor2: e.target.value })}
+                                className="nickname-color-input"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        <div className="nickname-row">
+                          <span className="nickname-control-label">{t('profile_nickname_direction')}</span>
+                          <div className="nickname-direction-btns">
+                            {NICKNAME_DIRECTIONS.map(d => (
+                              <button
+                                key={d.id}
+                                className={`nickname-dir-btn ${settings.nicknameGradientDirection === d.id ? 'active' : ''}`}
+                                onClick={() => saveSettings({ ...settings, nicknameGradientDirection: d.id })}
+                              >
+                                {nicknameLabel(settings.language, NICKNAME_DIRECTIONS, d.id)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="nickname-row">
+                          <span className="nickname-control-label">{t('profile_nickname_animation')}</span>
+                          <div className="nickname-row-content">
+                            <label className="nickname-toggle">
+                              <input
+                                type="checkbox"
+                                checked={!!settings.nicknameAnimate}
+                                onChange={(e) => saveSettings({ ...settings, nicknameAnimate: e.target.checked })}
+                              />
+                              <span className="nickname-toggle-track"><span className="nickname-toggle-thumb" /></span>
+                            </label>
+                            {settings.nicknameAnimate && (
+                              <>
+                                <select
+                                  value={settings.nicknameAnimateDirection || 'left'}
+                                  onChange={(e) => saveSettings({ ...settings, nicknameAnimateDirection: e.target.value })}
+                                  className="nickname-select nickname-select-inline"
+                                >
+                                  {NICKNAME_ANIM_DIRECTIONS.map(d => (
+                                    <option key={d.id} value={d.id}>{nicknameLabel(settings.language, NICKNAME_ANIM_DIRECTIONS, d.id)}</option>
+                                  ))}
+                                </select>
+                                <input
+                                  type="range"
+                                  min="1"
+                                  max="10"
+                                  step="1"
+                                  value={settings.nicknameAnimateSpeed || 4}
+                                  onChange={(e) => saveSettings({ ...settings, nicknameAnimateSpeed: Number(e.target.value) })}
+                                  className="nickname-range nickname-range-inline"
+                                  title={`${t('profile_nickname_anim_speed')}: ${settings.nicknameAnimateSpeed}s`}
+                                />
+                                <span className="nickname-range-val">{settings.nicknameAnimateSpeed}s</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="nickname-row">
+                      <span className="nickname-control-label">{t('profile_nickname_font')}</span>
+                      <select
+                        value={settings.nicknameFont || 'default'}
+                        onChange={(e) => saveSettings({ ...settings, nicknameFont: e.target.value })}
+                        className="nickname-select"
+                      >
+                        {NICKNAME_FONTS.map(f => (
+                          <option key={f.id} value={f.id}>{nicknameLabel(settings.language, NICKNAME_FONTS, f.id)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="nickname-row">
+                      <span className="nickname-control-label">{t('profile_nickname_effects')}</span>
+                      <div className="nickname-row-content">
+                        <div className="nickname-effect-btns">
+                          <button
+                            className={`nickname-effect-btn ${settings.nicknameBold ? 'active' : ''}`}
+                            onClick={() => saveSettings({ ...settings, nicknameBold: !settings.nicknameBold })}
+                            title={t('profile_nickname_bold')}
+                          >B</button>
+                          <button
+                            className={`nickname-effect-btn nickname-effect-italic ${settings.nicknameItalic ? 'active' : ''}`}
+                            onClick={() => saveSettings({ ...settings, nicknameItalic: !settings.nicknameItalic })}
+                            title={t('profile_nickname_italic')}
+                          >I</button>
+                          <button
+                            className={`nickname-effect-btn ${settings.nicknameUppercase ? 'active' : ''}`}
+                            onClick={() => saveSettings({ ...settings, nicknameUppercase: !settings.nicknameUppercase })}
+                            title={t('profile_nickname_uppercase')}
+                          >AA</button>
+                          <button
+                            className={`nickname-effect-btn ${settings.nicknameGlow ? 'active' : ''}`}
+                            onClick={() => saveSettings({ ...settings, nicknameGlow: !settings.nicknameGlow })}
+                            title={t('profile_nickname_glow')}
+                          >✨</button>
+                        </div>
+                        {settings.nicknameGlow && (
+                          <>
+                            <input
+                              type="color"
+                              value={settings.nicknameGlowColor || '#ffffff'}
+                              onChange={(e) => saveSettings({ ...settings, nicknameGlowColor: e.target.value })}
+                              className="nickname-color-input"
+                            />
+                            <input
+                              type="range"
+                              min="2"
+                              max="30"
+                              step="1"
+                              value={settings.nicknameGlowBlur || 8}
+                              onChange={(e) => saveSettings({ ...settings, nicknameGlowBlur: Number(e.target.value) })}
+                              className="nickname-range nickname-range-inline"
+                            />
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="nickname-row">
+                      <span className="nickname-control-label">{t('profile_nickname_spacing')}</span>
+                      <div className="nickname-row-content">
+                        <input
+                          type="range"
+                          min="0"
+                          max="20"
+                          step="1"
+                          value={settings.nicknameLetterSpacing || 0}
+                          onChange={(e) => saveSettings({ ...settings, nicknameLetterSpacing: Number(e.target.value) })}
+                          className="nickname-range"
+                        />
+                        <span className="nickname-range-val">{settings.nicknameLetterSpacing}px</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="profile-actions profile-card-block">
