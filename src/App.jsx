@@ -621,8 +621,10 @@ function App() {
             setCurrentTrack(savedState.currentTrack);
             currentTrackIdRef.current = savedState.currentTrack.id;
             
-            // Предзагружаем трек, но НЕ восстанавливаем время
-            if (token) {
+            // Предзагружаем трек, но НЕ восстанавливаем время.
+            // SoundCloud/локальные/VK треки играют НЕ через аудио-элемент — пропускаем
+            const srcType = savedState.currentTrack?.source;
+            if (token && srcType !== 'soundcloud' && srcType !== 'local' && srcType !== 'vk') {
               try {
                 const streamData = await window.electron.yandex.getStreamUrl(token, savedState.currentTrack.id);
                 audioRef1.current.src = streamData.url;
@@ -1866,6 +1868,14 @@ function App() {
 
   const handleLyricsSeek = (position) => {
     console.log('Lyrics seeking to position:', position);
+    if (currentTrack?.source === 'soundcloud') {
+      const widget = scWidgetRef.current;
+      if (widget && !isNaN(position)) {
+        widget.seekTo(position * 1000);
+        setCurrentTime(position);
+      }
+      return;
+    }
     const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
     if (audio && !isNaN(position)) { audio.currentTime = position; setCurrentTime(position); }
   };
@@ -2192,7 +2202,7 @@ function App() {
         <iframe
           ref={scIframeRef}
           title="SoundCloud"
-          src="https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2F-&auto_play=false&visual=false&show_artwork=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&download=false&sharing=false&buying=false"
+          src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(soundcloudTracks[0]?.url || 'https://soundcloud.com/-')}&auto_play=false&visual=false&show_artwork=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&download=false&sharing=false&buying=false`}
           style={{ display: 'none' }}
           allow="autoplay"
         />
