@@ -3918,3 +3918,117 @@ input, button, textarea, select {
   -moz-osx-font-smoothing: auto !important;
   font-smooth: auto !important;
 }
+
+/* ============ SoundCloud integration ============ */
+
+/* SoundCloud auth card */
+.soundcloud-auth {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  padding: 40px 20px;
+}
+
+.soundcloud-auth-card {
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  padding: 40px 36px;
+}
+
+.soundcloud-auth-desc {
+  color: var(--text-secondary, #888);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 12px 0 24px;
+}
+
+.soundcloud-input-wrap {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.soundcloud-input {
+  flex: 1;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.soundcloud-input:focus {
+  border-color: var(--primary-color, #b3b3b3);
+}
+
+.soundcloud-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.soundcloud-add-btn {
+  padding: 12px 20px;
+  background: #ff5500;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.soundcloud-add-btn:hover {
+  background: #ff6a1f;
+}
+
+.soundcloud-add-btn:active {
+  transform: scale(0.97);
+}
+
+.soundcloud-error {
+  margin-bottom: 14px;
+}
+
+.soundcloud-tracks-count {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 14px 0;
+}
+
+.soundcloud-continue-btn {
+  width: 100%;
+  padding: 12px;
+  background: #ff5500;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.soundcloud-continue-btn:hover {
+  background: #ff6a1a;
+}
+
+.soundcloud-continue-btn:active {
+  transform: scale(0.98);
+}
+
+/* SoundCloud icon in sidebar */
+.soundcloud-sidebar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 18px;
+  flex-shrink: 0;
+}

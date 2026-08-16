@@ -8,6 +8,7 @@ import SubscriptionModal from './components/SubscriptionModal';
 import YandexAuth from './components/YandexAuth';
 import VkAuth from './components/VkAuth';
 import VkMusicAPI from './services/VkMusicAPI';
+import SoundCloud from './services/SoundCloudAPI';
 
 import {
   HomeIcon, SearchIcon, LyricsIcon,
@@ -181,6 +182,10 @@ const avatarSrc = (filePath, fallback = '') => {
   if (!filePath) return fallback;
   return 'file:///' + filePath.replace(/\\/g, '/');
 };
+
+// SoundCloud виджет играет тише, поэтому усиливаем громкость
+const SOUNDCLOUD_VOLUME_BOOST = 1.5;
+const boostSoundCloudVolume = (v) => Math.min(1, (v || 0.7) * SOUNDCLOUD_VOLUME_BOOST);
 
 // Font stacks for each selectable font family
 const FONT_STACKS = {
@@ -486,7 +491,16 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
-  const [musicService, setMusicService] = useState('yandex'); // 'yandex' or 'vk'
+  const [musicService, setMusicService] = useState('yandex'); // 'yandex', 'vk' or 'soundcloud'
+  const [soundcloudTracks, setSoundcloudTracks] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('soundcloudTracks') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [soundcloudInput, setSoundcloudInput] = useState('');
+  const [soundcloudError, setSoundcloudError] = useState('');
   const t = (key) => translations[settings.language || 'ru']?.[key] || key;
   const [playlists, setPlaylists] = useState([]);
   const [localPlaylists, setLocalPlaylists] = useState([]);
@@ -590,6 +604,11 @@ function App() {
   const snowIntervalRef = useRef(null);
   const nextTrackTriggeredRef = useRef(false);
   const crossfadeIntervalRef = useRef(null);
+  const scIframeRef = useRef(null);
+  const scWidgetRef = useRef(null);
+  const scReadyRef = useRef(false);
+  const handleTrackEndRef = useRef(() => {});
+  const soundCloudEndRef = useRef(() => {});
 
   // Загрузка сохранённого трека и громкости (БЕЗ ВРЕМЕНИ)
   useEffect(() => {
@@ -760,9 +779,14 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // SoundCloud: применяем громкость к виджету
+    if (currentTrack?.source === 'soundcloud' && scWidgetRef.current && scReadyRef.current) {
+      scWidgetRef.current.setVolume(boostSoundCloudVolume(volume));
+      return;
+    }
     const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
     if (audio) audio.volume = volume;
-  }, [volume]);
+  }, [volume, currentTrack]);
 
   // Discord RPC
   const buildDiscordActivity = useCallback((playing) => {
@@ -844,9 +868,12 @@ function App() {
 
   // Стабильный геттер текущего времени аудио для LyricsView (60fps-цикл внутри компонента)
   const getCurrentTime = useCallback(() => {
+    if (currentTrack?.source === 'soundcloud') {
+      return currentTime;
+    }
     const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
     return audio ? audio.currentTime : 0;
-  }, []);
+  }, [currentTrack, currentTime]);
 
   useEffect(() => {
     document.addEventListener('click', closeContextMenu);
@@ -1448,6 +1475,11 @@ function App() {
   };
 
   const playTrack = async (track) => {
+    if (track.source === 'soundcloud') {
+      playSoundCloudTrack(track);
+      return;
+    }
+
     if (!token && track.source !== 'local') { setError('Нет токена авторизации'); return; }
 
     if (currentTrack?.id === track.id && !isCrossfading) {
@@ -1545,6 +1577,97 @@ function App() {
     }
   };
 
+  const playSoundCloudTrack = (track) => {
+    if (!track?.url) return;
+
+    if (currentTrack?.id === track.id) {
+      // Если тот же трек — переключаем play/pause
+      togglePlayPause();
+      return;
+    }
+
+    setCurrentTrack(track);
+    currentTrackIdRef.current = track.id;
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(false);
+    setIsLoadingTrack(true);
+    setError(null);
+
+    const iframe = scIframeRef.current;
+    const widget = scWidgetRef.current;
+
+    // По завершении трека — играем следующий
+    soundCloudEndRef.current = () => {
+      const list = tracks.length > 0 ? tracks : searchResults;
+      const idx = list.findIndex(t => t.id === track.id);
+      const next = idx !== -1 ? list[idx + 1] : null;
+      if (next) {
+        playTrack(next);
+      } else {
+        setIsPlaying(false);
+      }
+    };
+
+    const loadIntoWidget = (w) => {
+      w.load(track.url, {
+        auto_play: true,
+        visual: false,
+        show_artwork: false,
+        hide_related: true,
+        show_comments: false,
+        show_user: false,
+        show_reposts: false,
+        show_teaser: false,
+        download: false,
+        sharing: false,
+        buying: false
+      });
+      w.bind(window.SC.Widget.Events.READY, () => {
+        scReadyRef.current = true;
+        w.setVolume(boostSoundCloudVolume(volume));
+      });
+      w.bind(window.SC.Widget.Events.PLAY, () => {
+        setIsLoadingTrack(false);
+        setIsPlaying(true);
+      });
+      w.bind(window.SC.Widget.Events.PAUSE, () => {
+        setIsPlaying(false);
+      });
+      w.bind(window.SC.Widget.Events.FINISH, () => {
+        soundCloudEndRef.current();
+      });
+      w.bind(window.SC.Widget.Events.PLAY_PROGRESS, (data) => {
+        if (data && !isNaN(data.currentPosition)) {
+          setCurrentTime(data.currentPosition / 1000);
+          if (!duration && data.duration) setDuration(data.duration / 1000);
+        }
+      });
+      setTimeout(() => w.play(), 300);
+    };
+
+    if (!iframe) {
+      console.error('SoundCloud iframe ещё не загружен');
+      setIsLoadingTrack(false);
+      return;
+    }
+
+    if (scWidgetRef.current) {
+      loadIntoWidget(scWidgetRef.current);
+    } else {
+      initSoundCloudWidget();
+      // retry после инициализации
+      setTimeout(() => {
+        if (scWidgetRef.current) {
+          loadIntoWidget(scWidgetRef.current);
+        } else {
+          console.error('Не удалось инициализировать SoundCloud виджет');
+          setIsLoadingTrack(false);
+        }
+      }, 800);
+    }
+  };
+
   const loadTrackAudio = async (track) => {
     try {
       const streamData = await window.electron.yandex.getStreamUrl(token, track.id);
@@ -1565,6 +1688,21 @@ function App() {
   };
 
   const togglePlayPause = () => {
+    // SoundCloud: управляем через Widget API
+    if (currentTrack?.source === 'soundcloud') {
+      const widget = scWidgetRef.current;
+      if (widget) {
+        if (isPlaying) {
+          widget.pause();
+          setIsPlaying(false);
+        } else {
+          widget.play();
+          setIsPlaying(true);
+        }
+      }
+      return;
+    }
+
     const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
     
     if (!currentTrack) {
@@ -1786,6 +1924,133 @@ function App() {
     setMusicService('yandex');
   };
 
+  // ============ SoundCloud (виджет, без API-ключа и подписки) ============
+
+  // Загрузка player.js SoundCloud Widget API (глобальный SC)
+  const loadSoundCloudWidgetAPI = () => {
+    if (window.SC) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://w.soundcloud.com/player/api.js';
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Не удалось загрузить SoundCloud Widget API'));
+      document.head.appendChild(script);
+    });
+  };
+
+  // Инициализация виджета, когда появился iframe
+  useEffect(() => {
+    if (selectedPlaylist?.type === 'soundcloud' && scIframeRef.current) {
+      initSoundCloudWidget();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlaylist?.type]);
+
+  // Инициализация виджета
+  const initSoundCloudWidget = () => {
+    const iframe = scIframeRef.current;
+    if (!iframe) return null;
+    loadSoundCloudWidgetAPI()
+      .then(() => {
+        scWidgetRef.current = window.SC.Widget(iframe);
+
+        scWidgetRef.current.bind(window.SC.Widget.Events.READY, () => {
+          scReadyRef.current = true;
+          scWidgetRef.current.setVolume(boostSoundCloudVolume(volume));
+
+          // Слушаем окончание трека
+          scWidgetRef.current.bind(window.SC.Widget.Events.FINISH, () => {
+            soundCloudEndRef.current();
+          });
+
+          // Обновляем прогресс
+          scWidgetRef.current.bind(window.SC.Widget.Events.PLAY_PROGRESS, (data) => {
+            if (data && !isNaN(data.currentPosition)) {
+              setCurrentTime(data.currentPosition / 1000);
+            }
+          });
+
+          if (isPlaying) {
+            scWidgetRef.current.play();
+          }
+        });
+      })
+      .catch((err) => {
+        console.error('SoundCloud widget init error:', err);
+        setSoundcloudError('Не удалось загрузить SoundCloud плеер');
+        setIsLoadingTrack(false);
+      });
+    return scWidgetRef.current;
+  };
+
+  // Генерация стабильного id для трека
+  const soundcloudTrackId = (url) => {
+    const path = SoundCloud.extractPath(url);
+    return 'sc_' + (path ? path.replace(/[^a-zA-Z0-9]/g, '_') : btoa(url).slice(0, 16));
+  };
+
+  const handleSoundcloudLogin = async () => {
+    const url = soundcloudInput.trim();
+    setSoundcloudError('');
+    if (!url) {
+      setSoundcloudError('Вставьте ссылку на трек или плейлист SoundCloud');
+      return;
+    }
+
+    try {
+      const info = await SoundCloud.fetchTrackInfo(url);
+      const track = {
+        id: soundcloudTrackId(url),
+        title: info.title,
+        artists: info.artists,
+        album: 'SoundCloud',
+        duration: 0,
+        durationMs: 0,
+        cover: info.cover,
+        url: url.trim(),
+        source: 'soundcloud',
+        addedAt: Date.now()
+      };
+
+      setSoundcloudTracks(prev => {
+        const exists = prev.some(t => t.id === track.id);
+        if (exists) return prev;
+        const updated = [...prev, track];
+        localStorage.setItem('soundcloudTracks', JSON.stringify(updated));
+        return updated;
+      });
+
+      setIsAuthenticated(true);
+      setUser({ login: 'SoundCloud', name: 'SoundCloud' });
+      loadSoundcloudPlaylist();
+      setSoundcloudInput('');
+      showToast('Трек SoundCloud добавлен!');
+    } catch (err) {
+      setSoundcloudError(err.message || 'Ошибка добавления трека');
+    }
+  };
+
+  const loadSoundcloudPlaylist = () => {
+    setSelectedPlaylist({ id: 'soundcloud', name: 'SoundCloud', type: 'soundcloud' });
+    const list = soundcloudTracks.length > 0 ? [...soundcloudTracks] : 
+      (() => {
+        try { return JSON.parse(localStorage.getItem('soundcloudTracks') || '[]'); } catch { return []; }
+      })();
+    setTracks(list);
+    setActiveTab('home');
+    setLoading(false);
+  };
+
+  const removeSoundcloudTrack = (trackId) => {
+    setSoundcloudTracks(prev => {
+      const updated = prev.filter(t => t.id !== trackId);
+      localStorage.setItem('soundcloudTracks', JSON.stringify(updated));
+      if (selectedPlaylist?.id === 'soundcloud') setTracks(updated);
+      return updated;
+    });
+  };
+
   const handleVkLogin = async (vkToken) => {
     setLoading(true);
     try {
@@ -1835,6 +2100,13 @@ function App() {
               <span className="service-icon">🎶</span>
               <span>{t('service_vk')}</span>
             </button>
+            <button
+              className={`service-btn ${musicService === 'soundcloud' ? 'active' : ''}`}
+              onClick={() => setMusicService('soundcloud')}
+            >
+              <span className="service-icon">☁️</span>
+              <span>SoundCloud</span>
+            </button>
           </div>
 
         {musicService === 'yandex' ? (
@@ -1844,6 +2116,47 @@ function App() {
             error={error}
             language={settings.language || 'ru'}
           />
+        ) : musicService === 'soundcloud' ? (
+          <div className="soundcloud-auth">
+            <div className="auth-card soundcloud-auth-card">
+              <h2 className="auth-title">
+                <span className="auth-logo">☁️</span>
+                SoundCloud
+              </h2>
+              <p className="soundcloud-auth-desc">
+                Добавьте треки SoundCloud бесплатно — без токенов, регистрации и подписки
+              </p>
+              <div className="soundcloud-input-wrap">
+                <input
+                  type="url"
+                  className="search-input soundcloud-input"
+                  placeholder="https://soundcloud.com/артист/трек"
+                  value={soundcloudInput}
+                  onChange={(e) => setSoundcloudInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSoundcloudLogin();
+                    }
+                  }}
+                />
+                <button className="soundcloud-add-btn" onClick={handleSoundcloudLogin}>
+                  Добавить
+                </button>
+              </div>
+              {soundcloudError && <div className="error-state soundcloud-error"><span className="error-icon">⚠️</span><p>{soundcloudError}</p></div>}
+              <p className="soundcloud-tracks-count">
+                {soundcloudTracks.length > 0
+                  ? `Добавлено треков: ${soundcloudTracks.length}`
+                  : 'Вставьте ссылку на любой публичный трек или плейлист SoundCloud'}
+              </p>
+              {soundcloudTracks.length > 0 && (
+                <button className="soundcloud-continue-btn" onClick={loadSoundcloudPlaylist}>
+                  ▶ Продолжить
+                </button>
+              )}
+            </div>
+          </div>
         ) : (
           <VkAuth
             onAuth={handleVkLogin}
@@ -1873,6 +2186,17 @@ function App() {
       <Titlebar />
       <audio ref={audioRef1} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleLoadedMetadata} onEnded={handleTrackEnd} crossOrigin="anonymous" />
       <audio ref={audioRef2} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleLoadedMetadata} onEnded={handleTrackEnd} crossOrigin="anonymous" />
+      
+      {/* SoundCloud iframe (скрытый) для воспроизведения через Widget API */}
+      {selectedPlaylist?.type === 'soundcloud' && (
+        <iframe
+          ref={scIframeRef}
+          title="SoundCloud"
+          src="https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2F-&auto_play=false&visual=false&show_artwork=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&download=false&sharing=false&buying=false"
+          style={{ display: 'none' }}
+          allow="autoplay"
+        />
+      )}
       
       {settings.enableGifBackground && settings.gifPath && (
         <img 
@@ -1957,6 +2281,14 @@ function App() {
                   </button>
                 </div>
                 {selectedPlaylist?.id === 'local-tracks' && <motion.span layoutId="sidebar-pill" className="sidebar-pill" />}
+              </div>
+              <div className={`playlist-item ${selectedPlaylist?.type === 'soundcloud' ? 'active' : ''}`} onClick={loadSoundcloudPlaylist}>
+                <span className="soundcloud-sidebar-icon">☁️</span>
+                <div className="playlist-info">
+                  <div className="playlist-name">SoundCloud</div>
+                  <div className="playlist-meta">{soundcloudTracks.length} {t('main_playlist_tracks')}</div>
+                </div>
+                {selectedPlaylist?.type === 'soundcloud' && <motion.span layoutId="sidebar-pill" className="sidebar-pill" />}
               </div>
             </div>
             
@@ -2367,6 +2699,12 @@ function App() {
               <span> {t('main_delete_file')}</span>
             </div>
           )}
+          {selectedPlaylist?.type === 'soundcloud' && contextMenu?.track?.source === 'soundcloud' && (
+            <div className="context-menu-item delete" onClick={() => { removeSoundcloudTrack(contextMenu.track.id); closeContextMenu(); }}>
+              <DeleteIcon size={16} />
+              <span> Удалить из SoundCloud</span>
+            </div>
+          )}
         </div>
       )}
       
@@ -2754,6 +3092,14 @@ function App() {
                   duration={duration}
                   primaryColor={settings.primaryColor}
                   onSeek={(newTime) => {
+                    if (currentTrack?.source === 'soundcloud') {
+                      const widget = scWidgetRef.current;
+                      if (widget && !isNaN(newTime)) {
+                        widget.seekTo(newTime * 1000);
+                        setCurrentTime(newTime);
+                      }
+                      return;
+                    }
                     const audio = activeAudioRef.current === 1 ? audioRef1.current : audioRef2.current;
                     if (audio && !isNaN(newTime)) { audio.currentTime = newTime; setCurrentTime(newTime); }
                   }}

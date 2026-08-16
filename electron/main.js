@@ -506,9 +506,33 @@ function setupIpcHandlers() {
     // 3. Ищем в источниках
     let result = null;
 
-    // 3a. Яндекс.Музыка (если есть токен)
+    // 3a. Тексты для SoundCloud: ищем эту же песню в Яндекс.Музыке
     const yandexToken = store.get('yandexToken');
-    if (yandexToken) {
+    if (yandexToken && String(trackId).startsWith('sc_')) {
+      try {
+        const search = await yandexApi.search(yandexToken, `${artistName} ${trackName}`);
+        const results = search?.tracks?.results || [];
+        // Ищем точное совпадение по названию (исполнитель может отличаться транслитерацией)
+        const norm = (s) => String(s || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+        const match = results.find(t =>
+          norm(t.title) === norm(trackName) ||
+          norm(t.title).includes(norm(trackName)) ||
+          norm(trackName).includes(norm(t.title))
+        ) || results[0];
+
+        if (match) {
+          const yandexLyrics = await yandexApi.getLyrics(yandexToken, match.id);
+          if (yandexLyrics && !isYandexPlusPrompt(yandexLyrics.plain)) {
+            result = { ...yandexLyrics, source: 'yandex' };
+          }
+        }
+      } catch (err) {
+        console.error('[lyrics] SoundCloud->Yandex lookup error:', err.message);
+      }
+    }
+
+    // 3b. Яндекс.Музыка (обычный трек и fallback для SoundCloud)
+    if (!result && yandexToken && !String(trackId).startsWith('sc_')) {
       const yandexLyrics = await yandexApi.getLyrics(yandexToken, trackId);
       if (yandexLyrics && !isYandexPlusPrompt(yandexLyrics.plain)) {
         result = yandexLyrics;
@@ -517,7 +541,7 @@ function setupIpcHandlers() {
       }
     }
 
-    // 3b. LRCLIB
+    // 3c. LRCLIB и остальные источники
     if (!result) {
       const lrclib = await fetchFromLRCLIB(trackName, artistName, duration);
       if (lrclib?.synced) {
