@@ -5,8 +5,10 @@ import LyricsView from './components/LyricsView';
 import PlayerProgress from './components/PlayerProgress';
 import SettingsView from './components/SettingsView';
 import SubscriptionModal from './components/SubscriptionModal';
-import YandexAuth from './components/YandexAuth';
-import VkAuth from './components/VkAuth';
+import EmailAuth from './components/EmailAuth';
+// import AIAssistant from './components/AIAssistant'; // ОТКЛЮЧЁН: Gemini
+import ShareModal from './components/ShareModal';
+import EqualizerPanel, { EQ_FREQS, EQ_PRESETS } from './components/EqualizerPanel';
 import VkMusicAPI from './services/VkMusicAPI';
 import SoundCloud from './services/SoundCloudAPI';
 
@@ -219,7 +221,57 @@ const translations = {
     'nav_home': 'Главная',
     'nav_search': 'Поиск',
     'nav_lyrics': 'Текст',
+    'nav_ai': 'AI',
      'nav_back': 'Назад',
+
+    // Шаринг плейлистов
+    'share_title': 'Поделиться плейлистом',
+    'share_tab_give': 'Поделиться',
+    'share_tab_get': 'Получить',
+    'share_get_code': 'Получить код',
+    'share_code_hint': 'Отправьте этот код другу — он вставит его во вкладке «Получить»',
+    'share_copy': 'Копировать',
+    'share_copied': 'Скопировано!',
+    'share_open_playlist': 'Откройте свой плейлист, чтобы поделиться им',
+    'share_code_ph': 'КОД',
+    'share_find': 'Найти',
+    'share_import': 'Импортировать',
+    'share_imported': 'Плейлист импортирован!',
+    'share_notfound': 'Код не найден',
+    'share_code_invalid': 'Введите 6 символов кода',
+    'share_error': 'Ошибка',
+    'share_btn': 'Поделиться',
+    'mini_open': 'Мини-плеер',
+
+    // Эквалайзер
+    'eq_title': 'Эквалайзер',
+    'eq_enable': 'Включить эквалайзер',
+    'eq_reset': 'Сбросить',
+    'eq_preset_flat': 'Плоский',
+    'eq_preset_rock': 'Рок',
+    'eq_preset_pop': 'Поп',
+    'eq_preset_jazz': 'Джаз',
+    'eq_preset_bass': 'Бас',
+    'eq_preset_electronic': 'Электроника',
+    'eq_preset_vocal': 'Вокал',
+    'modal_done': 'Готово',
+
+    // AI
+    'ai_title': 'AI',
+    'ai_chat': 'Чат',
+    'ai_describe': 'Описание',
+    'ai_recommend': 'Рекомендации',
+    'ai_send': 'Отправить',
+    'ai_clear': 'Очистить',
+    'ai_thinking': 'Думаю…',
+    'ai_open_settings': 'Открыть Настройки → Токен',
+    'ai_chat_hint': 'Спросите про музыку, настроение, исполнителей…',
+    'ai_placeholder_chat': 'Сообщение…',
+    'ai_placeholder_recommend': 'Настроение, жанр, занятие… например вечерний ло-фай',
+    'ai_describe_for': 'Описать плейлист',
+    'ai_describe_library': 'Описать мою библиотеку / любимое',
+    'ai_describe_btn': 'Сгенерировать описание',
+    'ai_recommend_btn': 'Подобрать',
 
     // Sidebar
     'sidebar_mymedia': 'Моя медиатека',
@@ -358,7 +410,57 @@ const translations = {
     'nav_home': 'Home',
     'nav_search': 'Search',
     'nav_lyrics': 'Lyrics',
+    'nav_ai': 'AI',
      'nav_back': 'Back',
+
+    // Playlist sharing
+    'share_title': 'Share playlist',
+    'share_tab_give': 'Share',
+    'share_tab_get': 'Import',
+    'share_get_code': 'Get code',
+    'share_code_hint': 'Send this code to a friend — they paste it in the "Import" tab',
+    'share_copy': 'Copy',
+    'share_copied': 'Copied!',
+    'share_open_playlist': 'Open your playlist to share it',
+    'share_code_ph': 'CODE',
+    'share_find': 'Find',
+    'share_import': 'Import',
+    'share_imported': 'Playlist imported!',
+    'share_notfound': 'Code not found',
+    'share_code_invalid': 'Enter the 6-character code',
+    'share_error': 'Error',
+    'share_btn': 'Share',
+    'mini_open': 'Mini player',
+
+    // Equalizer
+    'eq_title': 'Equalizer',
+    'eq_enable': 'Enable equalizer',
+    'eq_reset': 'Reset',
+    'eq_preset_flat': 'Flat',
+    'eq_preset_rock': 'Rock',
+    'eq_preset_pop': 'Pop',
+    'eq_preset_jazz': 'Jazz',
+    'eq_preset_bass': 'Bass',
+    'eq_preset_electronic': 'Electronic',
+    'eq_preset_vocal': 'Vocal',
+    'modal_done': 'Done',
+
+    // AI
+    'ai_title': 'AI',
+    'ai_chat': 'Chat',
+    'ai_describe': 'Description',
+    'ai_recommend': 'Recommendations',
+    'ai_send': 'Send',
+    'ai_clear': 'Clear',
+    'ai_thinking': 'Thinking…',
+    'ai_open_settings': 'Open Settings → Token',
+    'ai_chat_hint': 'Ask about music, moods, artists…',
+    'ai_placeholder_chat': 'Message…',
+    'ai_placeholder_recommend': 'Mood, genre, activity… e.g. evening lo-fi',
+    'ai_describe_for': 'Describe playlist',
+    'ai_describe_library': 'Describe my library / favorites',
+    'ai_describe_btn': 'Generate description',
+    'ai_recommend_btn': 'Recommend',
 
     // Sidebar
     'sidebar_mymedia': 'My Media',
@@ -490,6 +592,7 @@ const translations = {
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState(null);
+  const [vkToken, setVkToken] = useState(null);
   const [user, setUser] = useState(null);
   const [musicService, setMusicService] = useState('yandex'); // 'yandex', 'vk' or 'soundcloud'
   const [soundcloudTracks, setSoundcloudTracks] = useState(() => {
@@ -529,6 +632,12 @@ function App() {
   
   const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sharePlaylist, setSharePlaylist] = useState(null);
+  const [showEq, setShowEq] = useState(false);
+  const eqNodesRef = useRef(null);
+  const miniOpenRef = useRef(false);
+  const playerCmdRef = useRef({});
   const [contextMenu, setContextMenu] = useState(null);
   
   const [settings, setSettings] = useState({
@@ -616,11 +725,11 @@ function App() {
       try {
         const savedState = await window.electron.player.getState();
         if (savedState) {
-          setVolume(savedState.volume || 0.7);
+          setVolume(savedState.volume ?? 0.7);
           if (savedState.currentTrack) {
             setCurrentTrack(savedState.currentTrack);
             currentTrackIdRef.current = savedState.currentTrack.id;
-            
+
             // Предзагружаем трек, но НЕ восстанавливаем время.
             // SoundCloud/локальные/VK треки играют НЕ через аудио-элемент — пропускаем
             const srcType = savedState.currentTrack?.source;
@@ -628,7 +737,7 @@ function App() {
               try {
                 const streamData = await window.electron.yandex.getStreamUrl(token, savedState.currentTrack.id);
                 audioRef1.current.src = streamData.url;
-                audioRef1.current.volume = savedState.volume || 0.7;
+                audioRef1.current.volume = savedState.volume ?? 0.7;
                 audioRef1.current.load();
                 activeAudioRef.current = 1;
               } catch (err) {
@@ -642,10 +751,12 @@ function App() {
       }
     };
     
-    if (isAuthenticated && token) {
+    // Восстанавливаем трек и громкость при любом входе — токены сервисов
+    // для этого не нужны (предзагрузка стрима выше сама проверяет token)
+    if (isAuthenticated) {
       loadPlayerState();
     }
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated]);
 
   // Сохранение трека и громкости (БЕЗ ВРЕМЕНИ)
   useEffect(() => {
@@ -1101,6 +1212,34 @@ function App() {
 
   const checkSavedToken = async () => {
     try {
+      // Новая регистрация по почте — основной вход
+      const session = await window.electron.auth.getSession();
+      if (session && session.email) {
+        setUser({ email: session.email, name: session.email });
+        setIsAuthenticated(true);
+
+        // Подгружаем ранее сохранённые токены сервисов из хранилища
+        const savedYandex = await window.electron.yandex.getToken();
+        if (savedYandex) {
+          const validation = await window.electron.yandex.validateToken(savedYandex);
+          if (validation.valid) setToken(savedYandex);
+        }
+        const savedVk = await window.electron.vk.getToken();
+        if (savedVk) {
+          setVkToken(savedVk);
+          VkMusicAPI.setToken(savedVk);
+        }
+
+        loadFavorites();
+        loadLocalPlaylists();
+        loadLocalTracks();
+        if (savedYandex) loadPlaylists(savedYandex);
+        checkSubscription();
+        setLoading(false);
+        return;
+      }
+
+      // Fallback: старый вход по токену Яндекса
       const savedToken = await window.electron.yandex.getToken();
       if (savedToken) {
         const validation = await window.electron.yandex.validateToken(savedToken);
@@ -1208,6 +1347,134 @@ function App() {
     setToast(message);
     setTimeout(() => setToast(null), 2000);
   };
+
+  // ============ Эквалайзер (Web Audio: оба аудио-элемента -> 10 полос -> выход) ============
+  const applyEqGainsToNodes = (gains, enabled) => {
+    const g = eqNodesRef.current;
+    if (!g) return;
+    g.filters.forEach((f, i) => {
+      try { f.gain.value = enabled ? (Number(gains?.[i]) || 0) : 0; } catch {}
+    });
+  };
+
+  const ensureEqChain = () => {
+    try {
+      if (!audioRef1.current || !audioRef2.current) return false;
+      let g = eqNodesRef.current;
+      if (!g) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        const ctx = new AC();
+        const master = ctx.createGain();
+        master.connect(ctx.destination);
+        let prev = null;
+        const filters = EQ_FREQS.map((freq, i) => {
+          const flt = ctx.createBiquadFilter();
+          flt.type = i === 0 ? 'lowshelf' : (i === EQ_FREQS.length - 1 ? 'highshelf' : 'peaking');
+          flt.frequency.value = freq;
+          flt.Q.value = 1;
+          flt.gain.value = 0;
+          if (prev) prev.connect(flt);
+          prev = flt;
+          return flt;
+        });
+        const src1 = ctx.createMediaElementSource(audioRef1.current);
+        const src2 = ctx.createMediaElementSource(audioRef2.current);
+        src1.connect(filters[0]);
+        src2.connect(filters[0]);
+        prev.connect(master);
+        g = { ctx, filters, master };
+        eqNodesRef.current = g;
+      }
+      if (g.ctx.state === 'suspended') g.ctx.resume().catch(() => {});
+      applyEqGainsToNodes(settings.eqGains || EQ_PRESETS.flat.gains, settings.eqEnabled === true);
+      return true;
+    } catch (err) {
+      console.error('EQ init failed:', err);
+      return false;
+    }
+  };
+
+  // ============ Мини-плеер ============
+  const pushMiniState = useCallback(() => {
+    if (!miniOpenRef.current) return;
+    try {
+      const currentList = activeTab === 'search' ? searchResults : tracks;
+      const slim = (t) => (t ? { id: t.id, title: t.title, artists: t.artists } : null);
+      let prev = null;
+      let next = null;
+      if (currentTrack && currentList.length > 0) {
+        const idx = currentList.findIndex(t => t.id === currentTrack.id);
+        if (idx !== -1) {
+          prev = slim(idx > 0 ? currentList[idx - 1] : null);
+          next = slim(idx < currentList.length - 1 ? currentList[idx + 1] : null);
+        }
+      }
+      window.electron.mini.push({
+        track: currentTrack
+          ? { id: currentTrack.id, title: currentTrack.title, artists: currentTrack.artists, cover: currentTrack.cover, album: currentTrack.album, duration: currentTrack.duration }
+          : null,
+        isPlaying,
+        prev,
+        next,
+        time: getCurrentTime()
+      });
+    } catch {}
+  }, [currentTrack, isPlaying, tracks, searchResults, activeTab]);
+
+  const openMiniPlayer = async () => {
+    try { await window.electron.mini.open(); } catch {}
+    miniOpenRef.current = true;
+    pushMiniState();
+  };
+
+  // ============ Шаринг плейлистов ============
+  const openShare = () => {
+    if (selectedPlaylist?.type === 'local') {
+      const pl = localPlaylists.find(p => p.id === selectedPlaylist.id);
+      setSharePlaylist(pl ? { name: pl.name, tracks: displayTracks } : null);
+    } else {
+      setSharePlaylist(null);
+    }
+    setShareOpen(true);
+  };
+
+  const handleShareImported = async () => {
+    await loadLocalPlaylists();
+    setShareOpen(false);
+    showToast(t('share_imported'));
+  };
+
+  // Команды из мини-плеера (всегда свежие хендлеры через ref).
+  // Стоит после всех определений: массивы зависимостей вычисляются во время рендера.
+  useEffect(() => {
+    playerCmdRef.current = { togglePlayPause, playNext, playPrevious };
+  });
+
+  useEffect(() => {
+    const off = window.electron.mini?.onCommand?.((cmd) => {
+      const c = playerCmdRef.current || {};
+      if (cmd === 'playpause' && c.togglePlayPause) c.togglePlayPause();
+      else if (cmd === 'next' && c.playNext) c.playNext();
+      else if (cmd === 'prev' && c.playPrevious) c.playPrevious();
+    });
+    return () => { if (typeof off === 'function') off(); };
+  }, []);
+
+  // Пуш состояния в мини-плеер при смене трека/паузы
+  useEffect(() => { pushMiniState(); }, [pushMiniState]);
+
+  // Тикающий пуш времени для караоке в мини-плеере (2/с, только пока мини открыт;
+  // между пушами мини сам интерполирует время, поэтому строки переключаются точно)
+  const pushTickRef = useRef(null);
+  pushTickRef.current = () => {
+    if (!miniOpenRef.current) return;
+    try { window.electron.mini.push({ time: getCurrentTime() }); } catch {}
+  };
+  useEffect(() => {
+    const id = setInterval(() => { try { pushTickRef.current?.(); } catch {} }, 500);
+    return () => clearInterval(id);
+  }, []);
 
   const toggleRepeat = () => {
     const newMode = repeatMode === 'none' ? 'all' : repeatMode === 'all' ? 'one' : 'none';
@@ -1524,6 +1791,7 @@ function App() {
     currentTrackIdRef.current = track.id;
     setCurrentTime(0);
     setDuration(track.duration / 1000 || 0);
+    if (settings.eqEnabled) ensureEqChain();
     setIsPlaying(false);
     activeAudioRef.current = 1;
     
@@ -1690,6 +1958,7 @@ function App() {
   };
 
   const togglePlayPause = () => {
+    if (settings.eqEnabled) ensureEqChain();
     // SoundCloud: управляем через Widget API
     if (currentTrack?.source === 'soundcloud') {
       const widget = scWidgetRef.current;
@@ -1893,19 +2162,58 @@ function App() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleLogin = async (providedToken) => {
-    const tokenToUse = providedToken || document.getElementById('tokenInput')?.value;
-    if (!tokenToUse) return;
+  const handleEmailLogin = async (email) => {
     setLoading(true);
     try {
-      const validation = await window.electron.yandex.validateToken(tokenToUse);
+      setUser({ email, name: email });
+      setIsAuthenticated(true);
+
+      const savedYandex = await window.electron.yandex.getToken();
+      if (savedYandex) {
+        const validation = await window.electron.yandex.validateToken(savedYandex);
+        if (validation.valid) {
+          setToken(savedYandex);
+          loadPlaylists(savedYandex);
+          loadRecommendations(savedYandex);
+        }
+      }
+      const savedVk = await window.electron.vk.getToken();
+      if (savedVk) {
+        setVkToken(savedVk);
+        VkMusicAPI.setToken(savedVk);
+      }
+
+      loadFavorites();
+      loadLocalPlaylists();
+      loadLocalTracks();
+      checkSubscription();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleYandexTokenChange = async (newToken) => {
+    if (!newToken?.trim()) {
+      await window.electron.yandex.saveToken(null);
+      setToken(null);
+      return;
+    }
+    try {
+      const validation = await window.electron.yandex.validateToken(newToken.trim());
       if (validation.valid) {
-        setToken(tokenToUse); setUser(validation.user); setIsAuthenticated(true);
-        await window.electron.yandex.saveToken(tokenToUse);
-        loadPlaylists(tokenToUse); loadFavorites(); loadLocalPlaylists(); loadLocalTracks(); loadRecommendations(tokenToUse);
-        checkSubscription();
-      } else { setError(t('auth_error_generic')); setLoading(false); }
-    } catch (err) { setError(err.message); setLoading(false); }
+        setToken(newToken.trim());
+        await window.electron.yandex.saveToken(newToken.trim());
+        loadPlaylists(newToken.trim());
+        loadRecommendations(newToken.trim());
+        showToast('Токен Яндекс.Музыки сохранён');
+      } else {
+        showToast('Токен Яндекс.Музыки недействителен');
+      }
+    } catch (err) {
+      showToast('Ошибка проверки токена Яндекс');
+    }
   };
 
 
@@ -1928,8 +2236,8 @@ function App() {
   const handleLogout = () => {
     stopCrossfade();
     cleanupAudio();
-    window.electron.yandex.saveToken(null);
-    setIsAuthenticated(false); setToken(null); setUser(null); setPlaylists([]); setLocalPlaylists([]);
+    window.electron.auth.logout();
+    setIsAuthenticated(false); setToken(null); setVkToken(null); setUser(null); setPlaylists([]); setLocalPlaylists([]);
     setFavorites([]); setTracks([]); setCurrentTrack(null); setIsPlaying(false);
     setMusicService('yandex');
   };
@@ -2000,6 +2308,7 @@ function App() {
     return 'sc_' + (path ? path.replace(/[^a-zA-Z0-9]/g, '_') : btoa(url).slice(0, 16));
   };
 
+  /* ОТКЛЮЧЁН (SoundCloud): добавление треков
   const handleSoundcloudLogin = async () => {
     const url = soundcloudInput.trim();
     setSoundcloudError('');
@@ -2040,6 +2349,7 @@ function App() {
       setSoundcloudError(err.message || 'Ошибка добавления трека');
     }
   };
+  */
 
   const loadSoundcloudPlaylist = () => {
     setSelectedPlaylist({ id: 'soundcloud', name: 'SoundCloud', type: 'soundcloud' });
@@ -2070,13 +2380,15 @@ function App() {
         throw new Error('VK token invalid or expired');
       }
       const userInfo = await VkMusicAPI.getUserInfo();
+      setVkToken(vkToken);
+      await window.electron.vk.saveToken(vkToken);
       setIsAuthenticated(true);
-      setToken(vkToken);
-      setUser({ name: `${userInfo.first_name} ${userInfo.last_name}`, login: userInfo.first_name, service: 'vk', vkId: userInfo.id });
-      
+      setUser(prev => ({ ...(prev || {}), name: `${userInfo.first_name} ${userInfo.last_name}`, login: userInfo.first_name, service: 'vk', vkId: userInfo.id }));
+
       // Load VK music
       const myTracks = await VkMusicAPI.getMyMusic(50);
       setTracks(myTracks);
+      showToast('VK Музыка подключена');
       setLoading(false);
     } catch (err) {
       setError(err.message || 'VK connection failed');
@@ -2094,88 +2406,11 @@ function App() {
     return (
       <div className="app" style={{ background: settings.backgroundColor }}>
         <Titlebar />
-        <div className="service-selection">
-          <div className="service-buttons">
-            <button
-              className={`service-btn ${musicService === 'yandex' ? 'active' : ''}`}
-              onClick={() => setMusicService('yandex')}
-            >
-              <span className="service-icon">🎵</span>
-              <span>{t('service_yandex')}</span>
-            </button>
-            <button
-              className={`service-btn ${musicService === 'vk' ? 'active' : ''}`}
-              onClick={() => setMusicService('vk')}
-            >
-              <span className="service-icon">🎶</span>
-              <span>{t('service_vk')}</span>
-            </button>
-            <button
-              className={`service-btn ${musicService === 'soundcloud' ? 'active' : ''}`}
-              onClick={() => setMusicService('soundcloud')}
-            >
-              <span className="service-icon">☁️</span>
-              <span>SoundCloud</span>
-            </button>
-          </div>
-
-        {musicService === 'yandex' ? (
-          <YandexAuth
-            onAuth={handleLogin}
-            loading={loading}
-            error={error}
-            language={settings.language || 'ru'}
-          />
-        ) : musicService === 'soundcloud' ? (
-          <div className="soundcloud-auth">
-            <div className="auth-card soundcloud-auth-card">
-              <h2 className="auth-title">
-                <span className="auth-logo">☁️</span>
-                SoundCloud
-              </h2>
-              <p className="soundcloud-auth-desc">
-                Добавьте треки SoundCloud бесплатно — без токенов, регистрации и подписки
-              </p>
-              <div className="soundcloud-input-wrap">
-                <input
-                  type="url"
-                  className="search-input soundcloud-input"
-                  placeholder="https://soundcloud.com/артист/трек"
-                  value={soundcloudInput}
-                  onChange={(e) => setSoundcloudInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleSoundcloudLogin();
-                    }
-                  }}
-                />
-                <button className="soundcloud-add-btn" onClick={handleSoundcloudLogin}>
-                  Добавить
-                </button>
-              </div>
-              {soundcloudError && <div className="error-state soundcloud-error"><span className="error-icon">⚠️</span><p>{soundcloudError}</p></div>}
-              <p className="soundcloud-tracks-count">
-                {soundcloudTracks.length > 0
-                  ? `Добавлено треков: ${soundcloudTracks.length}`
-                  : 'Вставьте ссылку на любой публичный трек или плейлист SoundCloud'}
-              </p>
-              {soundcloudTracks.length > 0 && (
-                <button className="soundcloud-continue-btn" onClick={loadSoundcloudPlaylist}>
-                  ▶ Продолжить
-                </button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <VkAuth
-            onAuth={handleVkLogin}
-            loading={loading}
-            error={error}
-            language={settings.language || 'ru'}
-          />
-        )}
-      </div>
+        <EmailAuth
+          onAuth={handleEmailLogin}
+          language={settings.language || 'ru'}
+          onLanguageChange={(lang) => saveSettings({ language: lang })}
+        />
       </div>
     );
   }
@@ -2197,7 +2432,7 @@ function App() {
       <audio ref={audioRef1} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleLoadedMetadata} onEnded={handleTrackEnd} crossOrigin="anonymous" />
       <audio ref={audioRef2} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleLoadedMetadata} onEnded={handleTrackEnd} crossOrigin="anonymous" />
       
-      {/* SoundCloud iframe (скрытый) для воспроизведения через Widget API */}
+      {/* ОТКЛЮЧЁН (SoundCloud): скрытый iframe виджета
       {selectedPlaylist?.type === 'soundcloud' && (
         <iframe
           ref={scIframeRef}
@@ -2207,6 +2442,7 @@ function App() {
           allow="autoplay"
         />
       )}
+      */}
       
       {settings.enableGifBackground && settings.gifPath && (
         <img 
@@ -2292,6 +2528,7 @@ function App() {
                 </div>
                 {selectedPlaylist?.id === 'local-tracks' && <motion.span layoutId="sidebar-pill" className="sidebar-pill" />}
               </div>
+              {/* ОТКЛЮЧЁН (SoundCloud): пункт сайдбара
               <div className={`playlist-item ${selectedPlaylist?.type === 'soundcloud' ? 'active' : ''}`} onClick={loadSoundcloudPlaylist}>
                 <span className="soundcloud-sidebar-icon">☁️</span>
                 <div className="playlist-info">
@@ -2300,6 +2537,7 @@ function App() {
                 </div>
                 {selectedPlaylist?.type === 'soundcloud' && <motion.span layoutId="sidebar-pill" className="sidebar-pill" />}
               </div>
+              */}
             </div>
             
             <div className="playlists-list">
@@ -2402,35 +2640,44 @@ function App() {
           </div>
             <div className="top-nav-center">
               <motion.button
-                layout
                 className={`top-nav-item ${activeTab === 'home' ? 'active' : ''}`}
                 onClick={() => setActiveTab('home')}
                 whileTap={{ scale: 0.95 }}
               >
                 <HomeIcon className="top-nav-icon" size={20} />
                 <span>{t('nav_home')}</span>
-                {activeTab === 'home' && <motion.span layoutId="nav-pill" className="nav-pill" />}
+                {activeTab === 'home' && <span className="nav-pill" />}
               </motion.button>
               <motion.button
-                layout
                 className={`top-nav-item ${activeTab === 'search' ? 'active' : ''}`}
                 onClick={() => setActiveTab('search')}
                 whileTap={{ scale: 0.95 }}
               >
                 <SearchIcon className="top-nav-icon" size={20} />
                 <span>{t('nav_search')}</span>
-                {activeTab === 'search' && <motion.span layoutId="nav-pill" className="nav-pill" />}
+                {activeTab === 'search' && <span className="nav-pill" />}
               </motion.button>
               <motion.button
-                layout
                 className={`top-nav-item ${activeTab === 'lyrics' ? 'active' : ''}`}
                 onClick={() => setActiveTab('lyrics')}
                 whileTap={{ scale: 0.95 }}
               >
                 <LyricsIcon className="top-nav-icon" size={20} />
                 <span>{t('nav_lyrics')}</span>
-                {activeTab === 'lyrics' && <motion.span layoutId="nav-pill" className="nav-pill" />}
+                {activeTab === 'lyrics' && <span className="nav-pill" />}
               </motion.button>
+              {/* ОТКЛЮЧЕНО (Gemini): вкладка AI
+              <motion.button
+                layout
+                className={`top-nav-item ${activeTab === 'ai' ? 'active' : ''}`}
+                onClick={() => setActiveTab('ai')}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="top-nav-icon" style={{ fontSize: 20, lineHeight: 1 }}>🤖</span>
+                <span>{t('nav_ai')}</span>
+                {activeTab === 'ai' && <motion.span layoutId="nav-pill" className="nav-pill" />}
+              </motion.button>
+              */}
             </div>
             <div className="top-nav-right"></div>
           </div>
@@ -2561,7 +2808,20 @@ function App() {
               )}
             </div>
           )}
-          
+          {/* ОТКЛЮЧЕНО (Gemini): панель AI
+          {activeTab === 'ai' && (
+            <AIAssistant
+              t={t}
+              settings={settings}
+              currentTrack={currentTrack}
+              selectedPlaylist={selectedPlaylist}
+              tracks={tracks}
+              favorites={favorites}
+              onOpenSettings={() => setShowSettings(true)}
+            />
+          )}
+          */}
+
           <AnimatePresence>
             {activeTab === 'lyrics' && (
               <motion.div
@@ -2620,7 +2880,7 @@ function App() {
             </div>
           )}
 
-          {activeTab !== 'lyrics' && !(activeTab === 'search' && selectedArtist) && (
+          {activeTab !== 'lyrics' && activeTab !== 'ai' && !(activeTab === 'search' && selectedArtist) && (
             <>
               {loading || isSearching ? (
                 <div className="loading-state"><div className="spinner"></div><p>{isSearching ? t('nav_search') + '...' : t('main_loading')}</p></div>
@@ -2631,6 +2891,9 @@ function App() {
                   <div className="playlist-header">
                     <h2 className="playlist-name-large">{displayTitle}</h2>
                     <p className="playlist-description">{displayTracks.length} {t('main_playlist_tracks')}</p>
+                    {selectedPlaylist?.type === 'local' && (
+                      <button className="share-playlist-btn" onClick={openShare}>🔗 {t('share_btn')}</button>
+                    )}
                   </div>
                   <div className="tracks-list">
                     <div className="tracks-header">
@@ -2709,15 +2972,57 @@ function App() {
               <span> {t('main_delete_file')}</span>
             </div>
           )}
+          {/* ОТКЛЮЧЁН (SoundCloud): пункт контекстного меню
           {selectedPlaylist?.type === 'soundcloud' && contextMenu?.track?.source === 'soundcloud' && (
             <div className="context-menu-item delete" onClick={() => { removeSoundcloudTrack(contextMenu.track.id); closeContextMenu(); }}>
               <DeleteIcon size={16} />
               <span> Удалить из SoundCloud</span>
             </div>
           )}
+          */}
         </div>
       )}
       
+      {shareOpen && (
+        <ShareModal
+          t={t}
+          playlist={sharePlaylist}
+          onClose={() => setShareOpen(false)}
+          onImported={handleShareImported}
+        />
+      )}
+
+      {showEq && (
+        <EqualizerPanel
+          t={t}
+          settings={settings}
+          onToggle={(v) => {
+            saveSettings({ eqEnabled: v });
+            if (v) {
+              if (ensureEqChain()) applyEqGainsToNodes(settings.eqGains || EQ_PRESETS.flat.gains, true);
+            } else {
+              applyEqGainsToNodes(settings.eqGains, false);
+            }
+          }}
+          onPreset={(name) => {
+            const gains = [...EQ_PRESETS[name].gains];
+            saveSettings({ eqPreset: name, eqGains: gains });
+            applyEqGainsToNodes(gains, settings.eqEnabled === true);
+          }}
+          onGain={(i, v) => {
+            const gains = [...(settings.eqGains || EQ_PRESETS.flat.gains)];
+            gains[i] = v;
+            saveSettings({ eqGains: gains, eqPreset: 'custom' });
+            applyEqGainsToNodes(gains, settings.eqEnabled === true);
+          }}
+          onReset={() => {
+            saveSettings({ eqPreset: 'flat', eqGains: [...EQ_PRESETS.flat.gains] });
+            applyEqGainsToNodes(EQ_PRESETS.flat.gains, settings.eqEnabled === true);
+          }}
+          onClose={() => setShowEq(false)}
+        />
+      )}
+
       {showCreatePlaylist && (
         <div className="modal-overlay" onClick={() => setShowCreatePlaylist(false)}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -2752,6 +3057,12 @@ function App() {
             onOpenSubscription={() => setShowSubscriptionModal(true)}
             subscriptionActive={subscriptionActive}
             t={t}
+            yandexToken={token}
+            vkToken={vkToken}
+            onSaveYandexToken={handleYandexTokenChange}
+            onConnectVk={handleVkLogin}
+            activeService={musicService}
+            onSelectService={(s) => setMusicService(s)}
           />
         )}
 
@@ -3016,7 +3327,7 @@ function App() {
                             className={`nickname-effect-btn ${settings.nicknameGlow ? 'active' : ''}`}
                             onClick={() => saveSettings({ ...settings, nicknameGlow: !settings.nicknameGlow })}
                             title={t('profile_nickname_glow')}
-                          >✨</button>
+                          >���</button>
                         </div>
                         {settings.nicknameGlow && (
                           <>
@@ -3116,6 +3427,12 @@ function App() {
                 />
               </div>
               <div className="player-controls-right">
+                <button className="player-btn player-btn-text" onClick={openMiniPlayer} title={t('mini_open')}>
+                  ⧉
+                </button>
+                <button className="player-btn player-btn-text" onClick={() => setShowEq(true)} title={t('eq_title')}>
+                  🎚️
+                </button>
                 <button className="player-btn player-shuffle" onClick={toggleShuffle}>
                   <span className="player-action-icon"><MixIcon size={18} /></span>
                 </button>

@@ -34,7 +34,29 @@ contextBridge.exposeInMainWorld('electron', {
     create: (name) => ipcRenderer.invoke('playlists:create', name),
     delete: (id) => ipcRenderer.invoke('playlists:delete', id),
     addTrack: (plId, track) => ipcRenderer.invoke('playlists:addTrack', plId, track),
-    removeTrack: (plId, trackId) => ipcRenderer.invoke('playlists:removeTrack', plId, trackId)
+    removeTrack: (plId, trackId) => ipcRenderer.invoke('playlists:removeTrack', plId, trackId),
+    import: (payload) => ipcRenderer.invoke('playlists:import', payload)
+  },
+  share: {
+    create: (payload) => ipcRenderer.invoke('share:create', payload),
+    get: (code) => ipcRenderer.invoke('share:get', code)
+  },
+  mini: {
+    open: () => ipcRenderer.invoke('mini:open'),
+    close: () => ipcRenderer.invoke('mini:close'),
+    push: (state) => ipcRenderer.invoke('mini:push', state),
+    resize: (size) => ipcRenderer.invoke('mini:resize', size),
+    command: (cmd) => ipcRenderer.invoke('mini:command', cmd),
+    onUpdate: (cb) => {
+      const handler = (e, state) => cb(state);
+      ipcRenderer.on('mini:update', handler);
+      return () => ipcRenderer.removeListener('mini:update', handler);
+    },
+    onCommand: (cb) => {
+      const handler = (e, cmd) => cb(cmd);
+      ipcRenderer.on('main:command', handler);
+      return () => ipcRenderer.removeListener('main:command', handler);
+    }
   },
   lyrics: {
     get: (trackId, trackName, artistName, albumName, duration) => 
@@ -65,12 +87,26 @@ contextBridge.exposeInMainWorld('electron', {
     setActivity: (activity) => ipcRenderer.invoke('discord:set-activity', activity)
   },
   vk: {
-    request: (method, token, params) => ipcRenderer.invoke('vk:request', method, token, params)
+    request: (method, token, params) => ipcRenderer.invoke('vk:request', method, token, params),
+    getToken: () => ipcRenderer.invoke('vk:get-token'),
+    saveToken: (t) => ipcRenderer.invoke('vk:save-token', t)
+  },
+  auth: {
+    sendCode: (email) => ipcRenderer.invoke('auth:send-code', email),
+    verifyCode: (email, code) => ipcRenderer.invoke('auth:verify-code', email, code),
+    getSession: () => ipcRenderer.invoke('auth:get-session'),
+    saveSession: (session) => ipcRenderer.invoke('auth:save-session', session),
+    logout: () => ipcRenderer.invoke('auth:logout')
   },
   nickname: {
     getCooldown: () => ipcRenderer.invoke('nickname:get-cooldown'),
     set: (name) => ipcRenderer.invoke('nickname:set', name)
   },
+  /* ОТКЛЮЧЁН (Gemini): мост AI
+  ai: {
+    chat: (payload) => ipcRenderer.invoke('ai:chat', payload)
+  },
+  */
   device: {
     getId: () => ipcRenderer.invoke('device:getId')
   },

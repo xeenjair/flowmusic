@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
 const mysql = require('mysql2/promise');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -32,6 +33,53 @@ const DB_CONFIG = {
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'flowmusic',
 };
+
+// ---------------------------------------------------------------------------
+// SMTP (email verification codes)
+// ---------------------------------------------------------------------------
+const SMTP_CONFIG = {
+  host: process.env.SMTP_HOST || '',
+  port: parseInt(process.env.SMTP_PORT || '465', 10),
+  secure: process.env.SMTP_SECURE !== 'false', // true for 465, false for STARTTLS (587)
+  user: process.env.SMTP_USER || '',
+  pass: process.env.SMTP_PASS || '',
+  from: process.env.SMTP_FROM || process.env.SMTP_USER || '',
+};
+
+let mailTransporter = null;
+function getMailTransporter() {
+  if (mailTransporter) return mailTransporter;
+  if (!SMTP_CONFIG.host || !SMTP_CONFIG.user) return null;
+  mailTransporter = nodemailer.createTransport({
+    host: SMTP_CONFIG.host,
+    port: SMTP_CONFIG.port,
+    secure: SMTP_CONFIG.secure,
+    auth: SMTP_CONFIG.user && SMTP_CONFIG.pass ? { user: SMTP_CONFIG.user, pass: SMTP_CONFIG.pass } : undefined,
+  });
+  return mailTransporter;
+}
+
+async function sendVerificationEmail(email, code) {
+  const transporter = getMailTransporter();
+  if (!transporter) {
+    // Fallback for local dev when SMTP is not configured: just log the code.
+    console.log(`[email] SMTP not configured. Verification code for ${email}: ${code}`);
+    return { delivered: false, devCode: code };
+  }
+  await transporter.sendMail({
+    from: SMTP_CONFIG.from || SMTP_CONFIG.user,
+    to: email,
+    subject: 'Код подтверждения Flowmusic',
+    text: `Ваш код подтверждения Flowmusic: ${code}\nКод действителен 10 минут.`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:420px;margin:0 auto;">
+      <h2 style="color:#ffd700;">Flowmusic</h2>
+      <p>Ваш код подтверждения регистрации:</p>
+      <div style="font-size:32px;font-weight:700;letter-spacing:6px;margin:16px 0;color:#111;">${code}</div>
+      <p style="color:#888;font-size:13px;">Код действителен 10 минут. Никому не сообщайте его.</p>
+    </div>`,
+  });
+  return { delivered: true };
+}
 
 async function initDatabase() {
   // 1. Ensure the database itself exists
@@ -182,6 +230,26 @@ async function initDatabase() {
       CONSTRAINT \`fk_history_track\`
         FOREIGN KEY (\`track_id\`) REFERENCES \`tracks\` (\`id\`)
         ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+    `CREATE TABLE IF NOT EXISTS \`email_codes\` (
+      \`id\`         INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+      \`email\`      VARCHAR(255)  NOT NULL,
+      \`code\`       VARCHAR(8)    NOT NULL,
+      \`expires_at\` DATETIME      NOT NULL,
+      \`used\`       TINYINT(1)    NOT NULL DEFAULT 0,
+      \`created_at\` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`),
+      KEY \`idx_email_codes_email\` (\`email\`),
+      KEY \`idx_email_codes_expires\` (\`expires_at\`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+    `CREATE TABLE IF NOT EXISTS \`shared_playlists\` (
+      \`code\`       VARCHAR(8)   NOT NULL,
+      \`name\`       VARCHAR(120) NOT NULL,
+      \`tracks\`     MEDIUMTEXT   NOT NULL,
+      \`created_at\` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`code\`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   ];
 
@@ -650,6 +718,192 @@ app.get('/api/admin/codes', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Admin codes error:', err);
     res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Email registration (verification code)
+// ---------------------------------------------------------------------------
+
+// In-memory rate limiting: email -> last send timestamp
+const emailSendLocks = new Map();
+
+function generateEmailCode() {
+  return String(Math.floor(100000 + Math.random() * 900000)); // 6 digits
+}
+
+/**
+ * POST /api/auth/send-code — отправить код подтверждения на email
+ * Body: { email }
+ */
+app.post('/api/auth/send-code', async (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Введите корректный email' });
+    }
+
+    // Rate limit: one code per 60 seconds per email
+    const now = Date.now();
+    const last = emailSendLocks.get(email) || 0;
+    if (now - last < 60 * 1000) {
+      const wait = Math.ceil((60 * 1000 - (now - last)) / 1000);
+      return res.status(429).json({ error: `Повторите через ${wait} с` });
+    }
+    emailSendLocks.set(email, now);
+
+    // Invalidate previous unused codes for this email
+    await runSql('UPDATE email_codes SET used = 1 WHERE email = ? AND used = 0', [email]);
+
+    const code = generateEmailCode();
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    await runSql(
+      'INSERT INTO email_codes (email, code, expires_at) VALUES (?, ?, ?)',
+      [email, code, toMySQLDateTime(expires)]
+    );
+
+    const result = await sendVerificationEmail(email, code);
+
+    res.json({
+      success: true,
+      delivered: result.delivered,
+      devCode: result.devCode || null, // only present when SMTP is not configured
+    });
+  } catch (err) {
+    console.error('Send code error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+/**
+ * POST /api/auth/verify-code — проверить код и завершить регистрацию/вход
+ * Body: { email, code }
+ */
+app.post('/api/auth/verify-code', async (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const code = String(req.body.code || '').trim();
+    if (!email || !code) {
+      return res.status(400).json({ error: 'email и code обязательны' });
+    }
+
+    const row = await getFirst(
+      'SELECT * FROM email_codes WHERE email = ? AND code = ? AND used = 0 AND expires_at > NOW() ORDER BY id DESC LIMIT 1',
+      [email, code]
+    );
+    if (!row) {
+      return res.status(400).json({ error: 'Неверный или устаревший код' });
+    }
+
+    await runSql('UPDATE email_codes SET used = 1 WHERE id = ?', [row.id]);
+
+    // Create/login the user account (linked by email)
+    let user = await getFirst('SELECT id FROM users WHERE email = ?', [email]);
+    if (!user) {
+      const uid = generateId();
+      const deviceId = `email:${email}`;
+      await runSql('INSERT INTO users (id, device_id, email) VALUES (?, ?, ?)', [uid, deviceId, email]);
+      user = { id: uid };
+    }
+
+    const sessionToken = crypto.randomUUID();
+    res.json({
+      success: true,
+      email,
+      token: sessionToken,
+      user: { email },
+    });
+  } catch (err) {
+    console.error('Verify code error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Playlist sharing by short code
+// ---------------------------------------------------------------------------
+const SHARE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function generateShareCode() {
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += SHARE_CODE_ALPHABET[crypto.randomInt(SHARE_CODE_ALPHABET.length)];
+  }
+  return code;
+}
+
+const SHARE_TRACK_FIELDS = ['id', 'trackId', 'title', 'artists', 'album', 'duration', 'durationMs', 'cover', 'explicit', 'source'];
+function sanitizeShareTrack(t) {
+  if (!t || typeof t !== 'object') return null;
+  const out = {};
+  for (const f of SHARE_TRACK_FIELDS) {
+    if (t[f] !== undefined && t[f] !== null) out[f] = t[f];
+  }
+  if (!out.title) return null;
+  if (typeof out.title !== 'string') out.title = String(out.title);
+  if (typeof out.artists === 'object') out.artists = '';
+  return out;
+}
+
+/**
+ * POST /api/share/create — сохранить плейлист и получить короткий код
+ * Body: { name, tracks: [...] }
+ */
+app.post('/api/share/create', async (req, res) => {
+  try {
+    const name = String(req.body.name || '').trim().slice(0, 120) || 'Без названия';
+    const rawTracks = Array.isArray(req.body.tracks) ? req.body.tracks.slice(0, 500) : [];
+    const tracks = rawTracks.map(sanitizeShareTrack).filter(Boolean);
+    if (tracks.length === 0) {
+      return res.status(400).json({ success: false, error: 'Пустой плейлист' });
+    }
+    const json = JSON.stringify(tracks);
+    if (json.length > 1000000) {
+      return res.status(400).json({ success: false, error: 'Плейлист слишком большой' });
+    }
+
+    let code = '';
+    for (let attempt = 0; attempt < 5; attempt++) {
+      code = generateShareCode();
+      const exists = await getFirst('SELECT code FROM shared_playlists WHERE code = ?', [code]);
+      if (!exists) break;
+      code = '';
+    }
+    if (!code) {
+      return res.status(500).json({ success: false, error: 'Не удалось создать код' });
+    }
+
+    await runSql('INSERT INTO shared_playlists (code, name, tracks) VALUES (?, ?, ?)', [code, name, json]);
+    res.json({ success: true, code });
+  } catch (err) {
+    console.error('Share create error:', err);
+    res.status(500).json({ success: false, error: 'Internal error' });
+  }
+});
+
+/**
+ * GET /api/share/:code — получить плейлист по коду
+ */
+app.get('/api/share/:code', async (req, res) => {
+  try {
+    const code = String(req.params.code || '').trim().toUpperCase().slice(0, 8);
+    if (!/^[A-Z2-9]{6}$/.test(code)) {
+      return res.status(404).json({ success: false, error: 'Код не найден' });
+    }
+    const row = await getFirst('SELECT name, tracks FROM shared_playlists WHERE code = ?', [code]);
+    if (!row) {
+      return res.status(404).json({ success: false, error: 'Код не найден' });
+    }
+    let tracks = [];
+    try {
+      tracks = JSON.parse(row.tracks);
+      if (!Array.isArray(tracks)) tracks = [];
+    } catch {
+      tracks = [];
+    }
+    res.json({ success: true, name: row.name, tracks });
+  } catch (err) {
+    console.error('Share get error:', err);
+    res.status(500).json({ success: false, error: 'Internal error' });
   }
 });
 
@@ -1165,8 +1419,9 @@ render();
 // Start server
 // ---------------------------------------------------------------------------
 initDatabase().then(() => {
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`FlowMusic Server running on ${BASE_URL}`);
+    console.log(`Local:  http://127.0.0.1:${PORT}`);
     console.log(`Price: ${SUBSCRIPTION_PRICE} ${SUBSCRIPTION_CURRENCY} / ${SUBSCRIPTION_DAYS} days`);
 
     if (!MERCHANT_LOGIN || !PASSWORD_1 || !PASSWORD_2) {

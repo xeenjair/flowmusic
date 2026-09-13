@@ -9,8 +9,12 @@ const { parse } = require('node-html-parser');
 
 const store = new Store();
 let mainWindow;
+let miniWindow = null;
 
-const BACKEND_URL = process.env.FLOWMUSIC_SERVER || 'http://localhost:3001';
+// Для доступа друзей через Radmin VPN используем VPN-IP хоста.
+// Локально также работает (переадресация на самого себя через VPN-адаптер).
+// При необходимости можно переопределить через переменную окружения FLOWMUSIC_SERVER.
+const BACKEND_URL = process.env.FLOWMUSIC_SERVER || 'http://26.72.17.166:3001';
 
 // Инициализация
 if (!store.has('deviceId')) store.set('deviceId', crypto.randomUUID());
@@ -75,6 +79,40 @@ function createWindow() {
 
   // Discord RPC
   initDiscordRPC();
+}
+
+// Компактный мини-плеер поверх всех окон (рендерит тот же бандл с хэшем #mini)
+function createMiniWindow() {
+  if (miniWindow && !miniWindow.isDestroyed()) {
+    miniWindow.focus();
+    return miniWindow;
+  }
+  miniWindow = new BrowserWindow({
+    width: 550,
+    height: 170,
+    minWidth: 320,
+    minHeight: 130,
+    frame: false,
+    resizable: false,
+    alwaysOnTop: true,
+    icon: path.join(__dirname, '../assets/icon.ico'),
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: false,
+      preload: path.join(__dirname, 'preload.js')
+    }
+  });
+
+  const isDev = process.env.NODE_ENV === 'development';
+  if (isDev) {
+    miniWindow.loadURL('http://localhost:8080/#mini');
+  } else {
+    miniWindow.loadFile(path.join(__dirname, '../dist/index.html'), { hash: 'mini' });
+  }
+
+  miniWindow.on('closed', () => { miniWindow = null; });
+  return miniWindow;
 }
 
 function initDiscordRPC() {
@@ -449,6 +487,45 @@ function setupIpcHandlers() {
     if (pl) { pl.tracks = pl.tracks.filter(t => t.id !== trackId); store.set('localPlaylists', pls); }
     return pl;
   });
+  ipcMain.handle('playlists:import', (e, payload) => {
+    const pls = store.get('localPlaylists', []);
+    const clean = Array.isArray(payload?.tracks)
+      ? payload.tracks.filter(t => t && t.title).slice(0, 500)
+      : [];
+    const newPl = {
+      id: generateId(),
+      name: String(payload?.name || 'Без названия').slice(0, 120),
+      tracks: clean,
+      createdAt: Date.now(),
+      imported: true
+    };
+    pls.push(newPl); store.set('localPlaylists', pls); return newPl;
+  });
+
+  // ============ Шаринг плейлистов по коду (через сервер) ============
+  ipcMain.handle('share:create', async (e, payload) => {
+    try {
+      const res = await axios.post(
+        `${BACKEND_URL}/api/share/create`,
+        { name: payload?.name, tracks: payload?.tracks },
+        { timeout: 15000 }
+      );
+      return res.data;
+    } catch (err) {
+      console.error('Share create error:', err.message);
+      return err.response?.data || { success: false, error: 'Сервер недоступен' };
+    }
+  });
+
+  ipcMain.handle('share:get', async (e, code) => {
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/share/${encodeURIComponent(String(code || ''))}`, { timeout: 10000 });
+      return res.data;
+    } catch (err) {
+      console.error('Share get error:', err.message);
+      return err.response?.data || { success: false, error: 'Сервер недоступен' };
+    }
+  });
 
   // Выбор GIF
   ipcMain.handle('dialog:select-gif', async () => {
@@ -804,9 +881,125 @@ app.on('will-quit', () => {
     }
   });
 
+  // ============ Email registration / auth ============
+  ipcMain.handle('auth:send-code', async (e, email) => {
+    try {
+      const res = await axios.post(`${BACKEND_URL}/api/auth/send-code`, { email }, { timeout: 10000 });
+      return res.data;
+    } catch (err) {
+      console.error('Send code error:', err.message);
+      return { success: false, error: err.response?.data?.error || err.message };
+    }
+  });
+
+  ipcMain.handle('auth:verify-code', async (e, email, code) => {
+    try {
+      const res = await axios.post(`${BACKEND_URL}/api/auth/verify-code`, { email, code }, { timeout: 10000 });
+      return res.data;
+    } catch (err) {
+      console.error('Verify code error:', err.message);
+      return { success: false, error: err.response?.data?.error || err.message };
+    }
+  });
+
+  ipcMain.handle('auth:get-session', () => store.get('authSession', null));
+  ipcMain.handle('auth:save-session', (e, session) => { store.set('authSession', session); return true; });
+  ipcMain.handle('auth:logout', () => { store.delete('authSession'); return true; });
+
+  // VK token persistence (configured in Settings → "токен")
+  ipcMain.handle('vk:get-token', () => store.get('vkToken', null));
+  ipcMain.handle('vk:save-token', (e, token) => { store.set('vkToken', token); return true; });
+
+  /* ОТКЛЮЧЁН (Gemini): весь AI-блок ниже — IPC ai:chat, geminiChat, ключи
+  // ============ AI: Google Gemini (напрямую, сервер не нужен) ============
+  // Бесплатный провайдер: Google Gemini (ключ с aistudio.google.com, напрямую, сервер не нужен)
+  const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+  const GEMINI_MODEL = 'gemini-2.5-flash';
+  const GEMINI_TEMPS = { chat: 0.7, describe: 0.8, recommend: 0.9 };
+
+  function cleanMessages(messages) {
+    return (Array.isArray(messages) ? messages : [])
+      .filter(m => m && typeof m.content === 'string' && ['system', 'user', 'assistant'].includes(m.role))
+      .slice(-20)
+      .map(m => ({ role: m.role, content: String(m.content).slice(0, 4000) }));
+  }
+
+  async function geminiChat(messages, purpose, apiKey) {
+    if (!apiKey) {
+      return { success: false, code: 'no_api_key', error: 'Нет ключа Gemini. Получите бесплатный на aistudio.google.com и вставьте в Настройки → Токен → Gemini.' };
+    }
+    const clean = cleanMessages(messages);
+    if (clean.length === 0 || !clean.some(m => m.role === 'user')) {
+      return { success: false, code: 'bad_messages', error: 'Нужно хотя бы одно сообщение' };
+    }
+    let res;
+    try {
+      res = await axios.post(
+        GEMINI_URL,
+        {
+          model: GEMINI_MODEL,
+          messages: clean,
+          temperature: GEMINI_TEMPS[purpose] || 0.7,
+          max_tokens: 1500,
+          stream: false,
+        },
+        { timeout: 90000, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` } }
+      );
+    } catch (err) {
+      const status = err.response?.status;
+      if (status === 429) {
+        return { success: false, code: 'rate_limit', error: 'Бесплатный лимит Gemini исчерпан, подождите минуту и повторите' };
+      }
+      if (status === 400 || status === 401 || status === 403) {
+        return { success: false, code: 'invalid_key', error: 'Неверный ключ Gemini или нет доступа. Проверьте ключ на aistudio.google.com' };
+      }
+      console.error('Gemini error:', err.message);
+      return { success: false, code: 'unreachable', error: 'Gemini недоступен, проверьте интернет' };
+    }
+    const reply = (res.data?.choices?.[0]?.message?.content || '').trim();
+    if (!reply) {
+      return { success: false, code: 'empty_reply', error: 'Пустой ответ от AI' };
+    }
+    return { success: true, reply, model: res.data?.model || GEMINI_MODEL };
+  }
+
+  ipcMain.handle('ai:chat', async (e, payload) => {
+    try {
+      const { messages, purpose } = payload || {};
+      const settings = store.get('settings', {});
+      return await geminiChat(messages, purpose, settings.geminiApiKey || '');
+    } catch (err) {
+      console.error('AI chat error:', err.message);
+      return { success: false, code: 'unreachable', error: 'AI недоступен' };
+    }
+  });
+  */
+
 ipcMain.on('window:minimize', () => mainWindow?.minimize());
 ipcMain.on('window:maximize', () => mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow?.maximize());
 ipcMain.on('window:close', () => mainWindow?.close());
+
+// ============ Мини-плеер ============
+ipcMain.handle('mini:open', () => { createMiniWindow(); return true; });
+ipcMain.handle('mini:close', () => { if (miniWindow && !miniWindow.isDestroyed()) miniWindow.close(); return true; });
+ipcMain.handle('mini:push', (e, state) => {
+  if (miniWindow && !miniWindow.isDestroyed()) miniWindow.webContents.send('mini:update', state || null);
+  return true;
+});
+ipcMain.handle('mini:resize', (e, size) => {
+  if (miniWindow && !miniWindow.isDestroyed() && size) {
+    miniWindow.setSize(Number(size.width) || 430, Number(size.height) || 170);
+  }
+  return true;
+});
+ipcMain.handle('mini:command', (e, cmd) => {
+  if (cmd === 'close') {
+    if (miniWindow && !miniWindow.isDestroyed()) miniWindow.close();
+    return true;
+  }
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('main:command', cmd);
+  return true;
+});
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 app.on('activate', () => { if (mainWindow === null) createWindow(); });

@@ -912,3 +912,21 @@
   font-size: 18px;
   opacity: 0.6;
 }
+
+/* ===== Token tab (service connection) ===== */
+.token-service-body {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.token-input {
+  flex: 1 1 260px;
+  min-width: 200px;
+}
+
+.token-save-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}

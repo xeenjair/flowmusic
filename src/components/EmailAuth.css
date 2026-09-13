@@ -1,0 +1,294 @@
+/* ============ Email Auth — redesigned login ============ */
+.email-auth {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+  background: #0b0b12;
+}
+
+/* Animated gradient backdrop */
+.email-auth-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(1200px 600px at 15% 10%, rgba(139, 92, 246, 0.18), transparent 60%),
+    radial-gradient(1000px 500px at 85% 90%, rgba(56, 189, 248, 0.14), transparent 60%),
+    linear-gradient(135deg, #0e0e1a 0%, #0a0a12 100%);
+  animation: ea-bg-shift 18s ease-in-out infinite alternate;
+}
+
+@keyframes ea-bg-shift {
+  0%   { background-position: 0% 0%, 100% 100%, 0 0; }
+  100% { background-position: 20% 10%, 80% 90%, 0 0; }
+}
+
+/* Floating blurred orbs */
+.ea-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.55;
+  animation: ea-float 14s ease-in-out infinite;
+}
+.ea-orb-1 {
+  width: 360px; height: 360px;
+  background: #8b5cf6;
+  top: -80px; left: -60px;
+  animation-delay: 0s;
+}
+.ea-orb-2 {
+  width: 300px; height: 300px;
+  background: #38bdf8;
+  bottom: -90px; right: -50px;
+  animation-delay: -4s;
+}
+.ea-orb-3 {
+  width: 240px; height: 240px;
+  background: #f472b6;
+  top: 40%; right: 20%;
+  opacity: 0.35;
+  animation-delay: -8s;
+}
+
+@keyframes ea-float {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(30px, -40px) scale(1.08); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+/* Floating music notes */
+.ea-note {
+  position: absolute;
+  font-size: 28px;
+  color: rgba(255, 255, 255, 0.08);
+  animation: ea-note-float 10s ease-in-out infinite;
+}
+.ea-note-1 { top: 18%; left: 22%; animation-delay: 0s; }
+.ea-note-2 { top: 70%; left: 30%; font-size: 22px; animation-delay: -3s; }
+.ea-note-3 { top: 30%; right: 24%; font-size: 34px; animation-delay: -6s; }
+.ea-note-4 { bottom: 20%; right: 32%; font-size: 20px; animation-delay: -9s; }
+
+@keyframes ea-note-float {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0.06; }
+  50%  { transform: translateY(-24px) rotate(12deg); opacity: 0.14; }
+  100% { transform: translateY(0) rotate(0deg); opacity: 0.06; }
+}
+
+/* Glass card */
+.email-auth-card {
+  position: relative;
+  z-index: 2;
+  z-index: 2;
+  width: 100%;
+  max-width: 420px;
+  padding: 44px 40px;
+  border-radius: 22px;
+  background: rgba(22, 22, 34, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  text-align: center;
+}
+
+.email-auth-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.email-auth-emoji {
+  font-size: 40px;
+  filter: drop-shadow(0 4px 12px rgba(139, 92, 246, 0.6));
+}
+
+.email-auth-title {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0;
+  background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 50%, #f472b6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.email-auth-subtitle {
+  color: #b6b6c8;
+  font-size: 14px;
+  margin: 0 0 28px;
+  line-height: 1.5;
+}
+
+.email-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.email-auth-input {
+  width: 100%;
+  padding: 15px 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.email-auth-input::placeholder {
+  color: #7a7a8c;
+}
+
+.email-auth-input:focus {
+  outline: none;
+  border-color: #a78bfa;
+  background: rgba(167, 139, 250, 0.08);
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.15);
+}
+
+.email-auth-code-input {
+  text-align: center;
+  letter-spacing: 10px;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.email-auth-btn {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #38bdf8 100%);
+  background-size: 200% 200%;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+  transition: transform 0.18s, box-shadow 0.18s, filter 0.18s, background-position 0.6s;
+}
+
+.email-auth-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background-position: 100% 0;
+  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.5);
+  filter: brightness(1.05);
+}
+
+.email-auth-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+}
+
+.email-auth-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.email-auth-back {
+  background: transparent;
+  border: none;
+  color: #9a9ab0;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.email-auth-back:hover:not(:disabled) {
+  color: #cfcfe6;
+}
+
+.email-auth-code-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 6px;
+}
+
+.email-auth-code-sub {
+  font-size: 13px;
+  color: #b6b6c8;
+  margin: 0 0 4px;
+  word-break: break-all;
+}
+
+.email-auth-info {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #6ee7a0;
+  font-size: 13px;
+}
+
+.email-auth-dev {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  color: #ffd700;
+  font-size: 13px;
+}
+
+.email-auth-spam {
+  margin-top: -6px;
+  font-size: 12px;
+  color: #8a8aa0;
+}
+
+.email-auth-error {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 71, 87, 0.12);
+  border: 1px solid rgba(255, 71, 87, 0.3);
+  color: #ff8a96;
+  font-size: 13px;
+}
+
+/* Language toggle */
+.email-auth-lang {
+  position: absolute;
+  top: 22px;
+  right: 26px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #8a8aa0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.email-auth-lang:hover {
+  border-color: rgba(167, 139, 250, 0.5);
+  background: rgba(167, 139, 250, 0.1);
+}
+
+.email-auth-lang span.active {
+  color: #fff;
+}
+
+.email-auth-lang .email-auth-lang-div {
+  color: #55556a;
+  font-weight: 400;
+}

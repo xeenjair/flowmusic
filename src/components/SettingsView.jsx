@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { CloseIcon } from './icons/Icons';
 import './SettingsView.css';
 
-const FONTS = [
+export const FONTS = [
   { value: 'default', label: 'Default', ru: 'По умолчанию', stack: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
   { value: 'minecraft', label: 'Minecraft', ru: 'Minecraft', stack: "'Minecraft', 'VT323', monospace" },
   { value: 'inter', label: 'Inter', ru: 'Inter', stack: "'Inter', -apple-system, 'Segoe UI', sans-serif" },
@@ -19,14 +19,25 @@ const FONTS = [
   { value: 'raleway', label: 'Raleway', ru: 'Raleway', stack: "'Raleway', 'Segoe UI', sans-serif" }
 ];
 
-const SettingsView = React.memo(function SettingsView({ settings, onSave, onClose, onSelectGif, onClearLyricsCache, subscriptionActive, onOpenSubscription, t }) {
+const SettingsView = React.memo(function SettingsView({ settings, onSave, onClose, onSelectGif, onClearLyricsCache, subscriptionActive, onOpenSubscription, t, yandexToken, vkToken, onSaveYandexToken, onConnectVk, onAddSoundcloud, soundcloudInput, onSoundcloudInputChange, activeService, onSelectService }) {
   const [localSettings, setLocalSettings] = useState(settings || {});
   const [activeSection, setActiveSection] = useState('appearance');
   const scrollAreaRef = useRef(null);
 
+  const [yxToken, setYxToken] = useState(yandexToken || '');
+  const [vkTokenInput, setVkTokenInput] = useState(vkToken || '');
+  // const [scInput, setScInput] = useState(soundcloudInput || ''); // ОТКЛЮЧЁН (SoundCloud)
+  // const [gmKey, setGmKey] = useState(settings?.geminiApiKey || ''); // ОТКЛЮЧЁН (Gemini)
+  const [tokenMsg, setTokenMsg] = useState(null);
+
   useEffect(() => {
     setLocalSettings(settings || {});
   }, [settings]);
+
+  useEffect(() => { setYxToken(yandexToken || ''); }, [yandexToken]);
+  useEffect(() => { setVkTokenInput(vkToken || ''); }, [vkToken]);
+  // useEffect(() => { setScInput(soundcloudInput || ''); }, [soundcloudInput]); // ОТКЛЮЧЁН (SoundCloud)
+  // useEffect(() => { setGmKey(settings?.geminiApiKey || ''); }, [settings?.geminiApiKey]); // ОТКЛЮЧЁН (Gemini)
 
   const handleChange = (key, value) => {
     setLocalSettings(prev => ({ ...prev, [key]: value }));
@@ -83,6 +94,12 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
         ? (isEnglish ? 'Your subscription is active' : 'Подписка активна')
         : (isEnglish ? 'Unlock exclusive features' : 'Откройте эксклюзивные функции'),
       icon: subscriptionActive ? '✅' : '👑'
+    },
+    {
+      id: 'token',
+      label: isEnglish ? 'Token' : 'Токен',
+      description: isEnglish ? 'Connect music services' : 'Подключение музыкальных сервисов',
+      icon: '🔑'
     }
   ];
 
@@ -579,6 +596,150 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
               ))}
             </div>
           </section>
+        </div>
+      );
+    }
+
+    if (activeSection === 'token') {
+      const services = [
+        { id: 'yandex', label: '🎵 Yandex.Музыка', connected: !!yandexToken },
+        { id: 'vk', label: '🎶 VK Музыка', connected: !!vkToken },
+        // ОТКЛЮЧЁН (SoundCloud): { id: 'soundcloud', label: '☁️ SoundCloud', connected: !!soundcloudInput }
+      ];
+      return (
+        <div className="settings-grid single-column">
+          <section className="settings-card">
+            <div className="card-head">
+              <div>
+                <h3>{isEnglish ? 'Active service' : 'Активный сервис'}</h3>
+                <p>{isEnglish ? 'Which service to use for search and playback' : 'Какой сервис использовать для поиска и воспроизведения'}</p>
+              </div>
+            </div>
+            <div className="card-body token-service-body" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+              {services.map(s => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={`choice-card ${activeService === s.id ? 'active' : ''}`}
+                  onClick={() => onSelectService?.(s.id)}
+                  style={{ justifyContent: 'space-between' }}
+                >
+                  <span>{s.label}</span>
+                  <span className="control-hint">{s.connected ? (isEnglish ? 'Connected' : 'Подключено') : (isEnglish ? 'Not connected' : 'Не подключено')}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="settings-card">
+            <div className="card-head">
+              <div>
+                <h3>🎵 Yandex.Музыка</h3>
+                <p>{isEnglish ? 'Paste OAuth token to access your library' : 'Вставьте OAuth токен для доступа к вашей библиотеке'}</p>
+              </div>
+            </div>
+            <div className="card-body token-service-body">
+              <input
+                type="password"
+                className="settings-text-input token-input"
+                placeholder={isEnglish ? 'Yandex.Music OAuth token' : 'OAuth токен Яндекс.Музыки'}
+                value={yxToken}
+                onChange={(e) => setYxToken(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn-primary token-save-btn"
+                onClick={() => { onSaveYandexToken?.(yxToken); setTokenMsg({ type: 'success', text: isEnglish ? 'Saved' : 'Сохранено' }); }}
+              >
+                {isEnglish ? 'Save' : 'Сохранить'}
+              </button>
+            </div>
+          </section>
+
+          <section className="settings-card">
+            <div className="card-head">
+              <div>
+                <h3>🎶 VK Музыка</h3>
+                <p>{isEnglish ? 'Paste VK token to connect music' : 'Вставьте VK токен для подключения музыки'}</p>
+              </div>
+            </div>
+            <div className="card-body token-service-body">
+              <input
+                type="password"
+                className="settings-text-input token-input"
+                placeholder="VK access_token"
+                value={vkTokenInput}
+                onChange={(e) => setVkTokenInput(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn-primary token-save-btn"
+                onClick={() => { onConnectVk?.(vkTokenInput); }}
+              >
+                {isEnglish ? 'Connect' : 'Подключить'}
+              </button>
+            </div>
+          </section>
+
+          {/* ОТКЛЮЧЁН (SoundCloud): карточка добавления треков
+          <section className="settings-card">
+            <div className="card-head">
+              <div>
+                <h3>☁️ SoundCloud</h3>
+                <p>{isEnglish ? 'Add tracks for free — no token required' : 'Добавьте треки бесплатно — без токена'}</p>
+              </div>
+            </div>
+            <div className="card-body token-service-body">
+              <input
+                type="url"
+                className="settings-text-input token-input"
+                placeholder="https://soundcloud.com/artist/track"
+                value={scInput}
+                onChange={(e) => { setScInput(e.target.value); onSoundcloudInputChange?.(e.target.value); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') onAddSoundcloud?.(); }}
+              />
+              <button
+                type="button"
+                className="btn-primary token-save-btn"
+                onClick={() => onAddSoundcloud?.()}
+              >
+                {isEnglish ? 'Add' : 'Добавить'}
+              </button>
+            </div>
+          </section>
+          */}
+
+          {/* ОТКЛЮЧЁН (Gemini): карточка API-ключа
+          <section className="settings-card">
+            <div className="card-head">
+              <div>
+                <h3>✨ Google Gemini (бесплатно)</h3>
+                <p>{isEnglish ? 'Free key from Google AI Studio — generous free limits' : 'Бесплатный ключ Google AI Studio — щедрые бесплатные лимиты'}</p>
+              </div>
+              <span className="control-hint">{gmKey || localSettings.geminiApiKey ? (isEnglish ? 'Connected' : 'Подключено') : (isEnglish ? 'Not connected' : 'Не подключено')}</span>
+            </div>
+            <div className="card-body token-service-body">
+              <input
+                type="password"
+                className="settings-text-input token-input"
+                placeholder="AIza..."
+                value={gmKey}
+                onChange={(e) => setGmKey(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn-primary token-save-btn"
+                onClick={() => { onSave({ ...localSettings, geminiApiKey: gmKey.trim() }); setTokenMsg({ type: 'success', text: isEnglish ? 'Saved' : 'Сохранено' }); }}
+              >
+                {isEnglish ? 'Save' : 'Сохранить'}
+              </button>
+            </div>
+          </section>
+          */}
+
+          {tokenMsg && (
+            <div className={`subscription-message ${tokenMsg.type}`}>{tokenMsg.text}</div>
+          )}
         </div>
       );
     }
