@@ -1,0 +1,82 @@
+/* BackgroundPaths — замена Tailwind-утилит из оригинала.
+   Тёмная тема как основная (приложение тёмное), акцент — primary из настроек. */
+
+.bp-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--bg-color, #0b0b12);
+}
+
+.bp-layers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bp-paths {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bp-svg {
+  width: 100%;
+  height: 100%;
+  color: var(--primary-color, #b3b3b3);
+}
+
+.bp-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.bp-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.bp-title {
+  font-size: clamp(44px, 9vw, 96px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  margin: 0 0 12px;
+  overflow: hidden;
+}
+
+.bp-word {
+  display: inline-block;
+  margin-right: 16px;
+}
+
+.bp-word:last-child {
+  margin-right: 0;
+}
+
+.bp-letter {
+  display: inline-block;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  background-image: linear-gradient(
+    180deg,
+    #ffffff 20%,
+    color-mix(in srgb, var(--primary-color, #a78bfa) 75%, white)
+  );
+}
+
+.bp-subtitle {
+  margin: 0 0 28px;
+  font-size: clamp(14px, 2.4vw, 17px);
+  line-height: 1.55;
+  color: var(--sel-dim, #b6b6c8);
+}

@@ -1,130 +1,20 @@
-/* ============ Email Auth — redesigned login ============ */
+/* ============ Email Auth — на фоне BackgroundPaths ============ */
 .email-auth {
   position: relative;
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  align-items: stretch;
+  justify-content: stretch;
   overflow: hidden;
-  background: #0b0b12;
+  background: var(--bg-color, #0b0b12);
 }
 
-/* Animated gradient backdrop */
-.email-auth-bg {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(1200px 600px at 15% 10%, rgba(139, 92, 246, 0.18), transparent 60%),
-    radial-gradient(1000px 500px at 85% 90%, rgba(56, 189, 248, 0.14), transparent 60%),
-    linear-gradient(135deg, #0e0e1a 0%, #0a0a12 100%);
-  animation: ea-bg-shift 18s ease-in-out infinite alternate;
-}
-
-@keyframes ea-bg-shift {
-  0%   { background-position: 0% 0%, 100% 100%, 0 0; }
-  100% { background-position: 20% 10%, 80% 90%, 0 0; }
-}
-
-/* Floating blurred orbs */
-.ea-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.55;
-  animation: ea-float 14s ease-in-out infinite;
-}
-.ea-orb-1 {
-  width: 360px; height: 360px;
-  background: #8b5cf6;
-  top: -80px; left: -60px;
-  animation-delay: 0s;
-}
-.ea-orb-2 {
-  width: 300px; height: 300px;
-  background: #38bdf8;
-  bottom: -90px; right: -50px;
-  animation-delay: -4s;
-}
-.ea-orb-3 {
-  width: 240px; height: 240px;
-  background: #f472b6;
-  top: 40%; right: 20%;
-  opacity: 0.35;
-  animation-delay: -8s;
-}
-
-@keyframes ea-float {
-  0%   { transform: translate(0, 0) scale(1); }
-  50%  { transform: translate(30px, -40px) scale(1.08); }
-  100% { transform: translate(0, 0) scale(1); }
-}
-
-/* Floating music notes */
-.ea-note {
-  position: absolute;
-  font-size: 28px;
-  color: rgba(255, 255, 255, 0.08);
-  animation: ea-note-float 10s ease-in-out infinite;
-}
-.ea-note-1 { top: 18%; left: 22%; animation-delay: 0s; }
-.ea-note-2 { top: 70%; left: 30%; font-size: 22px; animation-delay: -3s; }
-.ea-note-3 { top: 30%; right: 24%; font-size: 34px; animation-delay: -6s; }
-.ea-note-4 { bottom: 20%; right: 32%; font-size: 20px; animation-delay: -9s; }
-
-@keyframes ea-note-float {
-  0%   { transform: translateY(0) rotate(0deg); opacity: 0.06; }
-  50%  { transform: translateY(-24px) rotate(12deg); opacity: 0.14; }
-  100% { transform: translateY(0) rotate(0deg); opacity: 0.06; }
-}
-
-/* Glass card */
-.email-auth-card {
-  position: relative;
-  z-index: 2;
-  z-index: 2;
+/* Прозрачная панель формы поверх линий (вместо глухой карточки) */
+.email-auth-panel {
   width: 100%;
-  max-width: 420px;
-  padding: 44px 40px;
-  border-radius: 22px;
-  background: rgba(22, 22, 34, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  max-width: 400px;
+  margin: 0 auto;
   text-align: center;
-}
-
-.email-auth-logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.email-auth-emoji {
-  font-size: 40px;
-  filter: drop-shadow(0 4px 12px rgba(139, 92, 246, 0.6));
-}
-
-.email-auth-title {
-  font-size: 40px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  margin: 0;
-  background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 50%, #f472b6 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-}
-
-.email-auth-subtitle {
-  color: #b6b6c8;
-  font-size: 14px;
-  margin: 0 0 28px;
-  line-height: 1.5;
 }
 
 .email-auth-form {
@@ -136,12 +26,14 @@
 .email-auth-input {
   width: 100%;
   padding: 15px 18px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(11, 11, 18, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   color: #fff;
   font-size: 15px;
   box-sizing: border-box;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
@@ -209,13 +101,6 @@
   color: #cfcfe6;
 }
 
-.email-auth-code-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #fff;
-  margin: 0 0 6px;
-}
-
 .email-auth-code-sub {
   font-size: 13px;
   color: #b6b6c8;
@@ -261,7 +146,7 @@
   position: absolute;
   top: 22px;
   right: 26px;
-  z-index: 3;
+  z-index: 30;
   display: inline-flex;
   align-items: center;
   gap: 6px;

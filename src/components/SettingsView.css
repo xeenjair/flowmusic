@@ -930,3 +930,270 @@
   flex: 0 0 auto;
   white-space: nowrap;
 }
+
+/* ===== Редизайн под v-tabs-13: slim-табы + плоские панели ===== */
+
+/* Сайдбар: вместо карточек-пунктов — компактные строки как в паттерне */
+.settings-nav {
+  gap: 2px;
+}
+
+.settings-nav-item {
+  padding: 10px 12px 10px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  gap: 10px;
+}
+
+.settings-nav-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: transparent;
+}
+
+.settings-nav-item.active {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: transparent;
+}
+
+.settings-nav-item.active .nav-title {
+  color: var(--settings-accent, #a78bfa);
+}
+
+.settings-nav-item .nav-icon {
+  width: auto;
+  height: auto;
+  background: none;
+  border-radius: 0;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.settings-nav-item.active .nav-icon {
+  color: var(--settings-accent, #a78bfa);
+}
+
+.vt-underline .vt-tab.active::after {
+  left: 2px;
+  top: 9px;
+  bottom: 9px;
+}
+
+/* Панели: вместо боксов-карточек — плоские секции с разделителями */
+.settings-card {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0 0 24px;
+}
+
+.settings-card + .settings-card {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 22px;
+}
+
+.card-head {
+  margin-bottom: 14px;
+}
+
+.card-head h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.card-head p {
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.46);
+}
+
+/* ===== v-tabs-13 Pattern: чёрный диалог, таб в рамке, мелкие поля ===== */
+
+.settings-overlay {
+  background:
+    radial-gradient(900px 500px at 12% 8%, color-mix(in srgb, var(--settings-accent, #8b5cf6) 13%, transparent), transparent 60%),
+    radial-gradient(800px 520px at 88% 92%, rgba(59, 130, 246, 0.09), transparent 60%),
+    radial-gradient(600px 400px at 55% 55%, rgba(255, 255, 255, 0.025), transparent 65%),
+    #050507;
+}
+
+.settings-shell {
+  width: min(780px, 100%);
+  height: min(860px, calc(100vh - 56px));
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 28px;
+  align-items: stretch;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.settings-sidebar {
+  display: flex;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.settings-brand,
+.settings-sidebar-footer {
+  display: none;
+}
+
+/* Табы как на скрине: прозрачные строки, активный — в рамке */
+.settings-nav {
+  gap: 4px;
+}
+
+.settings-nav-item {
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  gap: 10px;
+}
+
+.settings-nav-item:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+.settings-nav-item:hover .nav-title {
+  color: #fff;
+}
+
+.settings-nav-item .nav-title {
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.settings-nav-item.active {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.settings-nav-item.active .nav-title {
+  color: #fff;
+  font-weight: 500;
+}
+
+.settings-nav-item .nav-icon {
+  width: auto;
+  height: auto;
+  background: none;
+  border-radius: 0;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.settings-nav-item.active .nav-icon {
+  color: #fff;
+}
+
+/* Полоску слева гасим — в паттерне активный таб это рамка, не полоска */
+.vt-underline .vt-tab.active::after {
+  content: none;
+}
+
+/* Кикер над аккордеоном как на референсе */
+.settings-kicker-label {
+  margin: 0 0 10px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Контент: мелкий заголовок + описание как в паттерне */
+.settings-main {
+  background: transparent;
+  min-height: 0;
+}
+
+.settings-topbar {
+  padding: 10px 0 0;
+}
+
+.section-kicker {
+  display: none;
+}
+
+.settings-topbar h1 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.settings-topbar p {
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.46);
+}
+
+.settings-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.settings-close:hover {
+  transform: none;
+}
+
+.settings-content {
+  padding: 0;
+}
+
+.settings-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Футер — slim, без тяжелой панели */
+.settings-footer {
+  padding: 18px 0 0;
+}
+
+.btn-muted,
+.btn-primary {
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+}
+
+.btn-primary:hover {
+  transform: none;
+}
+
+@media (max-width: 920px) {
+  .settings-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    height: calc(100vh - 28px);
+    overflow-y: auto;
+  }
+
+  .settings-sidebar {
+    overflow: visible;
+  }
+
+  .settings-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .settings-nav-item {
+    white-space: nowrap;
+  }
+
+  .settings-scrollarea {
+    overflow: visible;
+  }
+}

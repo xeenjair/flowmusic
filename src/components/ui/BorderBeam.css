@@ -1,0 +1,70 @@
+/* BorderBeam — бегущий луч по рамке.
+   Механика: conic-gradient с Rau от --bb-angle (анимируется через
+   @property), маска оставляет видимой только рамку шириной --bb-width.
+   Chrome 85+ / Electron — поддерживается. */
+
+@property --bb-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.bb-wrap {
+  position: relative;
+}
+
+.bb-beam {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  border-radius: var(--bb-radius, 20px);
+  padding: var(--bb-width, 1.5px);
+  background: conic-gradient(
+    from var(--bb-angle),
+    transparent 0deg,
+    rgba(255, 255, 255, 0.95) calc(var(--bb-span, 60deg) / 2),
+    transparent var(--bb-span, 60deg)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: bb-rotate var(--bb-duration, 4s) linear infinite;
+}
+
+/* Цветной луч в палитре приложения (фиолет → голубой → розовый) */
+.bb-beam.bb-colorful {
+  background: conic-gradient(
+    from var(--bb-angle),
+    transparent 0deg,
+    #8b5cf6 calc(var(--bb-span, 60deg) * 0.35),
+    #38bdf8 calc(var(--bb-span, 60deg) * 0.65),
+    #f472b6 var(--bb-span, 60deg),
+    transparent calc(var(--bb-span, 60deg) + 30deg)
+  );
+}
+
+@keyframes bb-rotate {
+  to {
+    --bb-angle: 360deg;
+  }
+}
+
+/* Использование на строке поиска: враппер = flex-контейнер поля */
+.bb-search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.bb-search .search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-beam {
+    animation: none;
+  }
+}

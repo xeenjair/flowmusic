@@ -1,0 +1,34 @@
+/* VerTabs — vertical underline tabs. Без анимаций: активная полоска
+   появляется мгновенно. Раскладку двух колонок даёт shell настроек. */
+
+.vt-list.vt-vertical {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Полоска активного таба слева (underline-вариант для вертикали).
+   Позиция внутри карточки пункта, поверх его бордера не вылезает. */
+.vt-underline .vt-tab {
+  position: relative;
+}
+
+.vt-underline .vt-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--settings-accent, var(--primary-color, #8b5cf6));
+}
+
+.vt-panel {
+  min-width: 0;
+}
+
+.vt-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 0 18px;
+}

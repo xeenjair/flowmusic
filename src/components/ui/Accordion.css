@@ -1,0 +1,109 @@
+/* Accordion — сайдбар настроек как на референсе: триггер + рельса ссылок.
+   Раскрытие мгновенное, без анимаций. */
+
+.ac-root {
+  display: flex;
+  flex-direction: column;
+}
+
+.ac-item {
+  border: 0;
+}
+
+.ac-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  color: #fff;
+}
+
+.ac-trigger:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ac-trigger-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ac-icon {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.55);
+  flex: none;
+}
+
+.ac-trigger.active .ac-icon {
+  color: #fff;
+}
+
+.ac-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+}
+
+.ac-trigger.active .ac-label {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Шеврон ^ : переворот мгновенный, без transition */
+.ac-chev {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-right: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.5);
+  transform: rotate(45deg) translate(1px, 3px);
+}
+
+.ac-item.open .ac-chev {
+  transform: rotate(225deg) translate(-1px, -1px);
+}
+
+/* Рельса подпунктов слева */
+.ac-content {
+  padding: 2px 0 8px;
+}
+
+.ac-links {
+  margin: 0 0 0 24px;
+  padding: 0 0 0 12px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ac-link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ac-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ac-link.current {
+  color: #fff;
+}

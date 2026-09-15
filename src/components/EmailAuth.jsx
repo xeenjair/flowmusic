@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import BackgroundPaths from './ui/BackgroundPaths';
 import './EmailAuth.css';
 
 const authTranslations = {
@@ -106,15 +107,73 @@ function EmailAuth({ onAuth, language, onLanguageChange }) {
 
   return (
     <div className="email-auth">
-      <div className="email-auth-bg">
-        <span className="ea-orb ea-orb-1" />
-        <span className="ea-orb ea-orb-2" />
-        <span className="ea-orb ea-orb-3" />
-        <span className="ea-note ea-note-1">♪</span>
-        <span className="ea-note ea-note-2">♫</span>
-        <span className="ea-note ea-note-3">♪</span>
-        <span className="ea-note ea-note-4">♬</span>
-      </div>
+      <BackgroundPaths
+        title={tt('title')}
+        subtitle={step === 'email' ? tt('subtitle') : tt('code_title')}
+      >
+        <div className="email-auth-panel">
+          {step === 'email' ? (
+            <form className="email-auth-form" onSubmit={handleSendCode}>
+              <input
+                type="email"
+                className="email-auth-input"
+                placeholder={tt('email_placeholder')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                autoFocus
+              />
+              {error && <div className="email-auth-error">{error}</div>}
+              <button
+                type="submit"
+                className="email-auth-btn"
+                disabled={loading || !email.trim()}
+              >
+                {loading ? tt('sending') : tt('send_code')}
+              </button>
+            </form>
+          ) : (
+            <form className="email-auth-form" onSubmit={handleVerify}>
+              <p className="email-auth-code-sub">
+                {tt('code_subtitle').replace('{email}', email)}
+              </p>
+              {info && <div className="email-auth-info">{info}</div>}
+              {info && <div className="email-auth-spam">{tt('spam_hint')}</div>}
+              {devCode && (
+                <div className="email-auth-dev">
+                  {tt('dev_hint').replace('{code}', devCode)}
+                </div>
+              )}
+              {error && <div className="email-auth-error">{error}</div>}
+              <input
+                type="text"
+                inputMode="numeric"
+                className="email-auth-input email-auth-code-input"
+                placeholder={tt('code_placeholder')}
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                disabled={loading}
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="email-auth-btn"
+                disabled={loading || code.trim().length < 4}
+              >
+                {loading ? tt('verifying') : tt('verify')}
+              </button>
+              <button
+                type="button"
+                className="email-auth-back"
+                onClick={resetToEmail}
+                disabled={loading}
+              >
+                {tt('back')}
+              </button>
+            </form>
+          )}
+        </div>
+      </BackgroundPaths>
 
       <button
         type="button"
@@ -125,76 +184,6 @@ function EmailAuth({ onAuth, language, onLanguageChange }) {
         <span className="email-auth-lang-div">/</span>
         <span className={language === 'en' ? 'active' : ''}>EN</span>
       </button>
-
-      <div className="email-auth-card">
-        <div className="email-auth-logo">
-          <span className="email-auth-emoji">🎵</span>
-          <h1 className="email-auth-title">{tt('title')}</h1>
-        </div>
-        <p className="email-auth-subtitle">{tt('subtitle')}</p>
-
-        {step === 'email' ? (
-          <form className="email-auth-form" onSubmit={handleSendCode}>
-            <input
-              type="email"
-              className="email-auth-input"
-              placeholder={tt('email_placeholder')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              autoFocus
-            />
-            {error && <div className="email-auth-error">{error}</div>}
-            <button
-              type="submit"
-              className="email-auth-btn"
-              disabled={loading || !email.trim()}
-            >
-              {loading ? tt('sending') : tt('send_code')}
-            </button>
-          </form>
-        ) : (
-          <form className="email-auth-form" onSubmit={handleVerify}>
-            <h2 className="email-auth-code-title">{tt('code_title')}</h2>
-            <p className="email-auth-code-sub">
-              {tt('code_subtitle').replace('{email}', email)}
-            </p>
-            {info && <div className="email-auth-info">{info}</div>}
-            {info && <div className="email-auth-spam">{tt('spam_hint')}</div>}
-            {devCode && (
-              <div className="email-auth-dev">
-                {tt('dev_hint').replace('{code}', devCode)}
-              </div>
-            )}
-            {error && <div className="email-auth-error">{error}</div>}
-            <input
-              type="text"
-              inputMode="numeric"
-              className="email-auth-input email-auth-code-input"
-              placeholder={tt('code_placeholder')}
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
-              disabled={loading}
-              autoFocus
-            />
-            <button
-              type="submit"
-              className="email-auth-btn"
-              disabled={loading || code.trim().length < 4}
-            >
-              {loading ? tt('verifying') : tt('verify')}
-            </button>
-            <button
-              type="button"
-              className="email-auth-back"
-              onClick={resetToEmail}
-              disabled={loading}
-            >
-              {tt('back')}
-            </button>
-          </form>
-        )}
-      </div>
     </div>
   );
 }

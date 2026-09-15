@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Titlebar from './components/Titlebar';
-import LyricsView from './components/LyricsView';
+import ScrollExpandLyrics from './components/ui/ScrollExpandLyrics';
+import { BorderBeam } from './components/ui/BorderBeam';
 import PlayerProgress from './components/PlayerProgress';
 import SettingsView from './components/SettingsView';
 import SubscriptionModal from './components/SubscriptionModal';
@@ -2695,13 +2696,15 @@ function App() {
             <div className="search-container">
               <div className="search-header"><h2>{t('nav_search')}</h2></div>
               <div className="search-input-wrapper">
-                <SearchIcon className="search-icon-svg" size={18} />
-                <input type="text" className="search-input" placeholder={t('main_search_placeholder')} value={searchQuery} onChange={(e) => handleSearch(e.target.value)} autoFocus />
-                {searchQuery && (
-                  <button className="search-clear" onClick={() => { setSearchQuery(''); setSearchResults([]); setArtistResults([]); setSelectedArtist(null); }}>
-                    <CloseIcon size={16} />
-                  </button>
-                )}
+                <BorderBeam className="bb-search" size="line" colorVariant="colorful" duration={3.1} borderRadius={30}>
+                  <SearchIcon className="search-icon-svg" size={18} />
+                  <input type="text" className="search-input" placeholder={t('main_search_placeholder')} value={searchQuery} onChange={(e) => handleSearch(e.target.value)} autoFocus />
+                  {searchQuery && (
+                    <button className="search-clear" onClick={() => { setSearchQuery(''); setSearchResults([]); setArtistResults([]); setSelectedArtist(null); }}>
+                      <CloseIcon size={16} />
+                    </button>
+                  )}
+                </BorderBeam>
               </div>
 
               {selectedArtist ? (
@@ -2822,36 +2825,26 @@ function App() {
           )}
           */}
 
-          <AnimatePresence>
-            {activeTab === 'lyrics' && (
-              <motion.div
-                key="lyrics-view"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 14 }}
-                transition={{ duration: 0.28, ease: 'easeOut' }}
-                style={{ position: 'fixed', inset: 0, zIndex: 100 }}
-              >
-                <LyricsView
-                  track={currentTrack}
-                  currentTime={currentTime}
-                  getCurrentTime={getCurrentTime}
-                  duration={duration}
-                  volume={volume}
-                  onVolumeChange={setVolume}
-                  isPlaying={isPlaying}
-                  onPlayPause={togglePlayPause}
-                  onNext={playNext}
-                  onPrevious={playPrevious}
-                  onSeek={handleLyricsSeek}
-                  isLoading={isLoadingTrack}
-                  onClose={() => setActiveTab('home')}
-                  settings={settings}
-                  t={t}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Lyrics в механике scroll-expansion: обложка раздвигается скроллом, потом текст */}
+          {activeTab === 'lyrics' && (
+            <ScrollExpandLyrics
+              track={currentTrack}
+              currentTime={currentTime}
+              getCurrentTime={getCurrentTime}
+              duration={duration}
+              volume={volume}
+              onVolumeChange={setVolume}
+              isPlaying={isPlaying}
+              onPlayPause={togglePlayPause}
+              onNext={playNext}
+              onPrevious={playPrevious}
+              onSeek={handleLyricsSeek}
+              isLoading={isLoadingTrack}
+              onClose={() => setActiveTab('home')}
+              settings={settings}
+              t={t}
+            />
+          )}
           
           {activeTab === 'home' && !selectedPlaylist && !loading && !error && (
             <div className="featured-playlists">
@@ -3025,7 +3018,7 @@ function App() {
 
       {showCreatePlaylist && (
         <div className="modal-overlay" onClick={() => setShowCreatePlaylist(false)}>
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal create-playlist-modal" onClick={(e) => e.stopPropagation()}>
           <h3>{t('modal_create_playlist')}</h3>
           <input type="text" className="modal-input" placeholder={t('modal_playlist_name')} value={newPlaylistName} onChange={(e) => setNewPlaylistName(e.target.value)} autoFocus />
           <div className="modal-actions">

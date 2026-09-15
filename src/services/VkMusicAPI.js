@@ -124,7 +124,7 @@ class VkMusicAPI {
       album: track.album?.title || '',
       duration: (track.duration || 0) * 1000,
       durationMs: (track.duration || 0) * 1000,
-      cover: track.album?.thumb?.photo_300 || track.album?.thumb?.photo_600 || null,
+      cover: track.album?.thumb?.photo_600 || track.album?.thumb?.photo_300 || null,
       url: track.url || '',
       streamUrl: track.url || '',
       source: 'vk',

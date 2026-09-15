@@ -1,5 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { CloseIcon } from './icons/Icons';
+import { Tabs, TabsPanel, Separator } from './ui/VerTabs';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './ui/Accordion';
 import './SettingsView.css';
 
 export const FONTS = [
@@ -22,6 +24,7 @@ export const FONTS = [
 const SettingsView = React.memo(function SettingsView({ settings, onSave, onClose, onSelectGif, onClearLyricsCache, subscriptionActive, onOpenSubscription, t, yandexToken, vkToken, onSaveYandexToken, onConnectVk, onAddSoundcloud, soundcloudInput, onSoundcloudInputChange, activeService, onSelectService }) {
   const [localSettings, setLocalSettings] = useState(settings || {});
   const [activeSection, setActiveSection] = useState('appearance');
+  const [activeAnchor, setActiveAnchor] = useState(null);
   const scrollAreaRef = useRef(null);
 
   const [yxToken, setYxToken] = useState(yandexToken || '');
@@ -46,6 +49,46 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
   const handleSave = () => {
     onSave(localSettings);
     onClose();
+  };
+
+  // Переключение вертикальных табов + мгновенный сброс скролла наверх
+  const handleSectionChange = (v) => {
+    setActiveSection(v);
+    if (scrollAreaRef.current) scrollAreaRef.current.scrollTop = 0;
+  };
+
+  // Прыжок к конкретной карточке внутри секции (из подпунктов аккордеона)
+  const jumpToCard = (sectionId, idx) => {
+    if (activeSection !== sectionId) setActiveSection(sectionId);
+    setActiveAnchor(`${sectionId}:${idx}`);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const area = scrollAreaRef.current;
+      const el = document.getElementById(`set-card-${sectionId}-${idx}`);
+      if (area && el) {
+        const shift = el.getBoundingClientRect().top - area.getBoundingClientRect().top;
+        area.scrollTop += shift - 12;
+      } else if (area) {
+        area.scrollTop = 0;
+      }
+    }));
+  };
+
+  // Подпункты аккордеона = карточки секций (RU/EN, premium зависит от подписки)
+  const accLinksFor = (id) => {
+    const L = (ru, en) => (isEnglish ? en : ru);
+    switch (id) {
+      case 'appearance': return [L('Цветовая схема', 'Color scheme'), L('Цвета окна настроек', 'Settings window colors'), L('Цвета текста песен', 'Song lyrics colors')];
+      case 'interface': return [L('Основные настройки', 'Basic settings'), L('Шрифты', 'Fonts'), L('Режим отображения', 'Display mode'), L('Интерфейс', 'Interface')];
+      case 'audio': return [L('Воспроизведение', 'Playback'), L('Качество', 'Quality')];
+      case 'effects': return [L('Визуальные эффекты', 'Visual effects'), L('Частицы', 'Particles'), L('Анимированный фон', 'Animated background')];
+      case 'shortcuts': return [L('Горячие клавиши', 'Hotkeys')];
+      case 'system': return [L('Система', 'System'), L('Интеграции', 'Integrations')];
+      case 'premium': return subscriptionActive
+        ? [L('Ваши премиум-функции', 'Your premium features'), L('Облачная синхронизация', 'Cloud sync')]
+        : [L('FlowMusic Premium', 'FlowMusic Premium'), L('Купить подписку', 'Get premium')];
+      case 'token': return [L('Активный сервис', 'Active service'), 'Yandex.Музыка', 'VK Музыка'];
+      default: return [];
+    }
   };
 
   const isEnglish = localSettings.language === 'en';
@@ -576,10 +619,17 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
       premium: premiumCards
     };
 
-    if (activeSection === 'shortcuts') {
-      return (
+    const tokenServices = [
+      { id: 'yandex', label: '🎵 Yandex.Музыка', connected: !!yandexToken },
+      { id: 'vk', label: '🎶 VK Музыка', connected: !!vkToken },
+      // ОТКЛЮЧЁН (SoundCloud): { id: 'soundcloud', label: '☁️ SoundCloud', connected: !!soundcloudInput }
+    ];
+
+    return (
+      <>
+      <TabsPanel value="shortcuts">
         <div className="settings-grid single-column">
-          <section className="settings-card wide-card">
+          <section id="set-card-shortcuts-0" className="settings-card wide-card">
             <div className="card-head">
               <div>
                 <h3>{isEnglish ? 'Hotkeys' : 'Горячие клавиши'}</h3>
@@ -597,18 +647,11 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
             </div>
           </section>
         </div>
-      );
-    }
+      </TabsPanel>
 
-    if (activeSection === 'token') {
-      const services = [
-        { id: 'yandex', label: '🎵 Yandex.Музыка', connected: !!yandexToken },
-        { id: 'vk', label: '🎶 VK Музыка', connected: !!vkToken },
-        // ОТКЛЮЧЁН (SoundCloud): { id: 'soundcloud', label: '☁️ SoundCloud', connected: !!soundcloudInput }
-      ];
-      return (
+      <TabsPanel value="token">
         <div className="settings-grid single-column">
-          <section className="settings-card">
+          <section id="set-card-token-0" className="settings-card">
             <div className="card-head">
               <div>
                 <h3>{isEnglish ? 'Active service' : 'Активный сервис'}</h3>
@@ -616,7 +659,7 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
               </div>
             </div>
             <div className="card-body token-service-body" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-              {services.map(s => (
+              {tokenServices.map(s => (
                 <button
                   key={s.id}
                   type="button"
@@ -631,7 +674,7 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
             </div>
           </section>
 
-          <section className="settings-card">
+          <section id="set-card-token-1" className="settings-card">
             <div className="card-head">
               <div>
                 <h3>🎵 Yandex.Музыка</h3>
@@ -656,7 +699,7 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
             </div>
           </section>
 
-          <section className="settings-card">
+          <section id="set-card-token-2" className="settings-card">
             <div className="card-head">
               <div>
                 <h3>🎶 VK Музыка</h3>
@@ -741,13 +784,13 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
             <div className={`subscription-message ${tokenMsg.type}`}>{tokenMsg.text}</div>
           )}
         </div>
-      );
-    }
+      </TabsPanel>
 
-    return (
-      <div className={`settings-grid ${['appearance', 'interface'].includes(activeSection) ? '' : 'single-column'}`}>
-        {(cardsBySection[activeSection] || []).map(card => (
-          <section key={card.title} className="settings-card">
+      {['appearance', 'interface', 'audio', 'effects', 'system', 'premium'].map((sectionId) => (
+      <TabsPanel key={sectionId} value={sectionId}>
+      <div className={`settings-grid ${['appearance', 'interface'].includes(sectionId) ? '' : 'single-column'}`}>
+        {(cardsBySection[sectionId] || []).map((card, idx) => (
+          <section key={card.title} id={`set-card-${sectionId}-${idx}`} className="settings-card">
             <div className="card-head">
               <div>
                 <h3>{card.title}</h3>
@@ -761,6 +804,9 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
           </section>
         ))}
       </div>
+      </TabsPanel>
+      ))}
+      </>
     );
   };
 
@@ -776,6 +822,7 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
           '--settings-card-tint': localSettings.settingsCardTint || '#1b2030'
         }}
       >
+        <Tabs value={activeSection} onValueChange={handleSectionChange} orientation="vertical">
         <aside className="settings-sidebar">
           <div className="settings-brand">
             <div className="brand-orb" />
@@ -785,22 +832,35 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
             </div>
           </div>
 
-          <nav className="settings-nav">
-            {sections.map(section => (
-              <button
-                key={section.id}
-                type="button"
-                className={`settings-nav-item ${activeSection === section.id ? 'active' : ''}`}
-                onClick={() => setActiveSection(section.id)}
-              >
-                <span className="nav-icon">{section.icon}</span>
-                <span className="nav-copy">
-                  <span className="nav-title">{section.label}</span>
-                  <span className="nav-subtitle">{section.description}</span>
-                </span>
-              </button>
+          <p className="settings-kicker-label">{isEnglish ? 'Settings' : 'Настройки'}</p>
+          <Accordion multiple defaultValue={[activeSection]} className="settings-acc">
+            {sections.map((section) => (
+              <AccordionItem key={section.id} value={section.id}>
+                <AccordionTrigger
+                  value={section.id}
+                  icon={section.icon}
+                  label={section.label}
+                  active={activeSection === section.id}
+                  onSelect={handleSectionChange}
+                />
+                <AccordionContent value={section.id}>
+                  <ul className="ac-links">
+                    {accLinksFor(section.id).map((link, idx) => (
+                      <li key={link}>
+                        <button
+                          type="button"
+                          className={`ac-link${activeAnchor === `${section.id}:${idx}` ? ' current' : ''}`}
+                          onClick={() => jumpToCard(section.id, idx)}
+                        >
+                          {link}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </nav>
+          </Accordion>
 
           <div className="settings-sidebar-footer">
             <div className="profile-card">
@@ -823,6 +883,8 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
             <button type="button" className="settings-close" onClick={onClose}><CloseIcon size={20} /></button>
           </div>
 
+          <Separator />
+
           <div
             className="settings-scrollarea"
             ref={scrollAreaRef}
@@ -837,6 +899,7 @@ const SettingsView = React.memo(function SettingsView({ settings, onSave, onClos
             <button type="button" className="btn-primary" onClick={handleSave}>{isEnglish ? 'Save' : 'Сохранить'}</button>
           </footer>
         </main>
+        </Tabs>
       </div>
     </div>
   );
